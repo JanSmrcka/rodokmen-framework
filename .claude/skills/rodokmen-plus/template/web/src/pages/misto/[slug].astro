@@ -1,0 +1,42 @@
+---
+import Base from '../../layouts/Base.astro';
+import PersonLink from '../../components/PersonLink.astro';
+import HouseLink from '../../components/HouseLink.astro';
+import { villages, lines, records, dateKey, href } from '../../lib/data.js';
+
+export function getStaticPaths() {
+  return Object.keys(villages).map((slug) => ({ params: { slug } }));
+}
+const v = villages[Astro.params.slug];
+const recs = v.records.filter((r) => records[r]).sort((a, b) => dateKey(records[a].date) - dateKey(records[b].date));
+// matriky = svazky, ze kterých pocházejí zápisy z obce
+const volumes = Object.values(recs.reduce((a, r) => {
+  const x = records[r]; const key = `${x.archive} ${x.volume}`;
+  (a[key] ??= { archive: x.archive, volume: x.volume, desc: x.vdesc, url: x.url, n: 0 }).n++;
+  return a;
+}, {}));
+---
+<Base title={v.name} description={`${v.name} – předkové, domy a zápisy z rodokmenu`}>
+  <p class="crumbs"><a href="/mapa/">Mapa</a> · <span>{v.name}</span></p>
+  <h1>{v.name}</h1>
+  <div class="chips">
+    {v.years && <span class="chip">předkové doloženi {v.years[0]}–{v.years[1]}</span>}
+    {v.lines.map((s) => <a class="chip" href={href.line(s)}><span class="dot" style={`background:${lines[s].color}`}></span>rod {lines[s].name}</a>)}
+  </div>
+
+  {v.houses.length > 0 && (<><h2>Domy</h2><ul>{v.houses.map((h) => <li><HouseLink slug={h} /></li>)}</ul></>)}
+
+  <h2>Osoby</h2>
+  {v.people.length ? <p>{v.people.map((s, i) => <>{i > 0 && ', '}<PersonLink slug={s} /></>)}</p>
+    : <p class="muted">Z rodokmenu tu zatím nikoho doloženého nemáme.</p>}
+
+  {volumes.length > 0 && (
+    <>
+      <h2>Matriky a prameny</h2>
+      <ul>{volumes.map((m) => <li>{m.archive}{m.volume && <>, {m.volume}</>}{m.desc && <span class="muted"> – {m.desc}</span>} <span class="small muted">({m.n} {m.n === 1 ? 'zápis' : m.n < 5 ? 'zápisy' : 'zápisů'})</span></li>)}</ul>
+      <details class="sources"><summary>Zápisy ({recs.length})</summary>
+        <ul>{recs.map((r) => <li><a href={href.record(r)}>{records[r].title}</a> <span class="small muted">{records[r].date}</span></li>)}</ul>
+      </details>
+    </>
+  )}
+</Base>

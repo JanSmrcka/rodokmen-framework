@@ -1,0 +1,29 @@
+---
+// Další příběhy (např. příběh jednoho rodu) z data/web.json „pribehy“: [{slug, titulek, soubor}].
+// Export je zapíše do src/generated/pribehy/<slug>.md, stránka je /pribeh/<slug>/.
+import Base from '../../layouts/Base.astro';
+import StoryDocs from '../../components/StoryDocs.astro';
+import { lines } from '../../lib/data.js';
+const files = import.meta.glob('../../generated/pribehy/*.md', { eager: true });
+export function getStaticPaths() {
+  const all = import.meta.glob('../../generated/pribehy/*.md', { eager: true });
+  return Object.keys(all).map((f) => ({ params: { slug: f.split('/').pop().replace(/\.md$/, '') } }));
+}
+const { slug } = Astro.params;
+const { Content, frontmatter } = files[`../../generated/pribehy/${slug}.md`];
+// rod z frontmatteru (rod: slug rodu) – odkaz na stránku rodu
+const line = frontmatter.rod ? lines[frontmatter.rod] : null;
+---
+<Base title={frontmatter.title}>
+  <p class="crumbs"><a href="/pribehy/">příběhy</a>{line && <> · <a href={`/rod/${line.slug}/`}>{line.name}</a></>} · <a href="/zajimavosti/">další zajímavosti</a></p>
+  <h1>{frontmatter.title}</h1>
+  {frontmatter.lead && <p class="lead">{frontmatter.lead}</p>}
+  <div class="prose"><Content /></div>
+
+  <div class="next-step">
+    <p><strong>Chcete víc?</strong> {line ? 'Všechny osoby rodu a jejich zápisy najdete na stránce rodu, další' : 'Další'} objevy v zajímavostech.</p>
+    {line && <a class="btn" href={`/rod/${line.slug}/`}>Rod {line.name} →</a>} <a class="btn" href="/zajimavosti/">Zajímavosti →</a>
+  </div>
+
+  <StoryDocs story={slug} />
+</Base>

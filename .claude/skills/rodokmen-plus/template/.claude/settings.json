@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 -I \"$CLAUDE_PROJECT_DIR/tools/hlidac.py\" 2>/dev/null || python -I -X utf8 \"$CLAUDE_PROJECT_DIR/tools/hlidac.py\"",
+            "timeout": 60
+          }
+        ]
+      }
+    ]
+  }
+}

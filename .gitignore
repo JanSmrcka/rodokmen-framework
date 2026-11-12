@@ -1,0 +1,30 @@
+# lokální nastavení (přístup do DB, API token) – nikdy do gitu
+.env
+.env.*
+!.env.example
+
+# osobní data a pracovní soubory (rodokmen žije v databázi, ne v repu)
+pracovni/
+zalohy/
+data/
+zdroje/
+vyrezy/
+dokumenty/
+*.ged
+*.ftb
+
+# Next.js aplikace
+aplikace/node_modules/
+aplikace/.next/
+aplikace/.vercel/
+aplikace/next-env.d.ts
+aplikace/tsconfig.tsbuildinfo
+
+# systém, Python
+__pycache__/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.tar.gz
+.claude/worktrees/
+.claude/settings.local.json

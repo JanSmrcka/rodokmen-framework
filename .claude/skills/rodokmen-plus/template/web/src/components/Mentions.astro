@@ -1,0 +1,12 @@
+---
+// Zpětný index „Zmíněno v příběhu“: odkazy na odstavce příběhů a zajímavostí (z exportu, pole mentions).
+const { items = [] } = Astro.props;
+---
+{items.length > 0 && (
+  <>
+    <h2>Zmíněno v příběhu</h2>
+    <ul class="mentions">
+      {items.map((m) => <li><a href={m.href}>{m.page}{m.section && <> – {m.section}</>}</a></li>)}
+    </ul>
+  </>
+)}

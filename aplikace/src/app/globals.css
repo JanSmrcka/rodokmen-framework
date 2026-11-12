@@ -1,0 +1,128 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f7f3ec;
+  --card: #fffdf9;
+  --ink: #2a2520;
+  --muted: #6f665b;
+  --line: #e4dccf;
+  --accent: #7a3b2e;
+  --accent-soft: #f1e3dc;
+  --male: #3f6c8f;
+  --female: #a24d67;
+  --st-doc: #3e7d4f;
+  --st-prob: #b48a2c;
+  --st-fam: #4f74a8;
+  --st-mh: #8a6bb0;
+  --st-unk: #9a9187;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #17140f;
+    --card: #211d17;
+    --ink: #ece4d7;
+    --muted: #a69b8c;
+    --line: #3a332a;
+    --accent: #e09a7f;
+    --accent-soft: #3a2620;
+    --male: #8bb4d6;
+    --female: #e29ab0;
+    --st-doc: #7cc08d;
+    --st-prob: #e0b95a;
+    --st-fam: #8eb0e0;
+    --st-mh: #bba0e0;
+    --st-unk: #8a8176;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+/* Rendered markdown stories */
+.prose-story {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 1.15rem;
+  line-height: 1.75;
+}
+.prose-story h2 {
+  font-size: 1.6rem;
+  margin: 2.5rem 0 0.75rem;
+  line-height: 1.25;
+}
+.prose-story h3 {
+  font-size: 1.25rem;
+  margin: 2rem 0 0.5rem;
+}
+.prose-story p {
+  margin: 0 0 1.1rem;
+}
+.prose-story a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.prose-story ul,
+.prose-story ol {
+  margin: 0 0 1.1rem 1.4rem;
+  list-style: disc;
+}
+.prose-story table {
+  font-family: var(--font-body), sans-serif;
+  font-size: 0.85rem;
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+.prose-story th,
+.prose-story td {
+  border-bottom: 1px solid var(--line);
+  padding: 0.4rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+.prose-story img {
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+.prose-story .kotva {
+  scroll-margin-top: 6rem;
+}
+
+.leaflet-container {
+  font-family: var(--font-body), sans-serif;
+  background: var(--paper);
+}
+
+/* tisk dárkových karet: A4, bez okrajů stránky navíc */
+@page {
+  size: A4;
+  margin: 10mm;
+}
+@media print {
+  body {
+    background: white;
+  }
+  .gift-card {
+    break-inside: avoid;
+  }
+}

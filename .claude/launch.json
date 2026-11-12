@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "aplikace",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "aplikace", "run", "dev"],
+      "port": 3000
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+ "popis": "Varianty příjmení pro čtení matrik (jak se jméno psalo v zápisech).",
+ "obecne_vzorce": [
+  "W = V, w = v (Wanek = Vaněk)",
+  "cz = č, rz = ř, ss/sch = š, y = ý/í/j",
+  "ženy: -ová; v němčině/kurentu -in (Nowakin); v latině -a",
+  "kurent: e/n/r a k/h snadno zaměnitelné; dlouhé samohlásky se nepíší"
+ ],
+ "prijmeni": [
+  {
+   "prijmeni": "Novák",
+   "varianty": [
+    "Nowak",
+    "Nowák",
+    "Nowakin (žena)"
+   ],
+   "pozn": "ukázka"
+  }
+ ]
+}

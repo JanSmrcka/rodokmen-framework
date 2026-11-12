@@ -1,0 +1,48 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1794137510051,
+      "tag": "0000_rozsireni",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794137514697,
+      "tag": "0001_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794138973450,
+      "tag": "0002_indexy_cas",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794140773030,
+      "tag": "0003_pole_svazku_mist_pribehu",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794141333559,
+      "tag": "0004_dalsi_zdroje_domu",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794255969195,
+      "tag": "0005_voditko_rozdeleno",
+      "breakpoints": true
+    }
+  ]
+}

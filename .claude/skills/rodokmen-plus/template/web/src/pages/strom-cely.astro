@@ -1,0 +1,179 @@
+---
+import Base from '../layouts/Base.astro';
+import ViewSwitch from '../components/ViewSwitch.astro';
+import { people, lines, root, roots, statusClass, lineByK } from '../lib/data.js';
+// Kompaktní data pro klientský strom (jen to, co se kreslí).
+const tree = {
+  root: root.slug,
+  roots: roots.map((r) => ({ key: r.key, id: r.id, name: r.name })),
+  people: Object.fromEntries(Object.values(people).map((p) => [p.slug, {
+    n: p.name, y: p.years, c: statusClass(p.st), s: p.status, x: p.sex,
+    f: p.father, m: p.mother, ch: p.children, sp: p.spouse,
+    col: p.line && lineByK[p.line] ? lineByK[p.line].color : null,
+    sib: (p.side ?? []).map((s) => s.name),
+  }])),
+  lines: Object.values(lines).sort((a, b) => a.k - b.k).map((l) => ({ slug: l.slug, name: l.name, root: l.root, color: l.color })),
+};
+const lineList = tree.lines;
+---
+<Base title="Celý strom" full>
+  <div class="fan-bar tree-bar">
+    <ViewSwitch current="cely" />
+    <strong>Strom rodu</strong>
+    <label class="small">Zobrazit
+      <select class="tree-pick" aria-label="Vybrat rod">
+        <option value="vse">{roots.length > 1 ? `celý rodokmen – ${root.name}` : 'celý rodokmen'}</option>
+        {roots.length > 1 && roots.filter((r) => r.id !== root.slug).map((r) => <option value={`koren-${r.key}`}>celý rodokmen – {r.name}</option>)}
+        {lineList.map((l) => <option value={`rod-${l.slug}`}>rod {l.name}</option>)}
+      </select>
+    </label>
+    <span class="fan-btns">
+      <button type="button" data-z="1.25" aria-label="Přiblížit">+</button>
+      <button type="button" data-z="0.8" aria-label="Oddálit">−</button>
+      <button type="button" data-z="0">100 %</button>
+    </span>
+    <span class="small muted fan-hint">Nejstarší předci nahoře, potomci pod nimi. Klepnutím na jméno strom přecentrujete na tuto osobu, šipkou → otevřete její stránku. Šedě sourozenci a příbuzní mimo přímou linii. Podobně <a href="/vejir/">vějíř</a> a <a href="/predci/">seznam předků</a>.</span>
+    <span class="tree-legend small"><span class="chip st-doc">doloženo</span> <span class="chip st-prob">pravděpodobné</span> <span class="chip st-fam">od rodiny / z literatury</span> <span class="chip st-mh">MyHeritage</span></span>
+  </div>
+  <div class="tree-stage"><div class="tree-canvas"></div></div>
+  <script type="application/json" id="tree-data" set:html={JSON.stringify(tree)} />
+
+  <script>
+    type P = { n: string; y: string; c: string; s: string; x: string; f: string | null; m: string | null; ch: string[]; sp: string | null; col: string | null; sib: string[] };
+    const data = JSON.parse(document.getElementById('tree-data')!.textContent!) as { root: string; people: Record<string, P>; lines: { slug: string; name: string; root: string; color: string }[]; roots: { key: string; id: string; name: string }[] };
+    const P = data.people;
+    const stage = document.querySelector<HTMLElement>('.tree-stage')!;
+    const canvas = document.querySelector<HTMLElement>('.tree-canvas')!;
+    const pick = document.querySelector<HTMLSelectElement>('.tree-pick')!;
+    const W = 176, H = 92, GX = 14, GY = 46;
+    const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+    let scale = 1;
+
+    /** Rozložení: předci nahoru (listy zleva doprava, rodič nad středem svých rodičů), potomci dolů s manželi vedle. */
+    function render(focus: string, up: number, down: number, title: string) {
+      const nodes: { slug: string; col: number; row: number; focus?: boolean }[] = [];
+      const edges: [number, number, number][] = []; // [child, parentA, parentB|-1]
+      let cursor = 0;
+      const anc = (slug: string, row: number): number => {
+        const p = P[slug];
+        const ids: number[] = [];
+        if (row > -up) for (const par of [p.f, p.m]) if (par && P[par]) ids.push(anc(par, row - 1));
+        const col = ids.length ? ids.reduce((a, i) => a + nodes[i].col, 0) / ids.length : cursor++;
+        nodes.push({ slug, col, row });
+        const me = nodes.length - 1;
+        if (ids.length) edges.push([me, ids[0], ids[1] ?? -1]);
+        return me;
+      };
+      const f = anc(focus, 0);
+      nodes[f].focus = true;
+      // manžel(ka) a potomci pod fokusem
+      const desc = (idx: number, depth: number) => {
+        const p = P[nodes[idx].slug];
+        let partner = -1;
+        if (p.sp && P[p.sp] && !nodes.some((n) => n.slug === p.sp)) {
+          nodes.push({ slug: p.sp, col: nodes[idx].col + 1, row: nodes[idx].row });
+          partner = nodes.length - 1;
+        }
+        if (depth >= down) return;
+        const kids = p.ch.filter((c) => P[c]);
+        const mid = partner >= 0 ? nodes[idx].col + 0.5 : nodes[idx].col;
+        kids.forEach((c, i) => {
+          nodes.push({ slug: c, col: mid + (i - (kids.length - 1) / 2) * 2.2, row: nodes[idx].row + 1 });
+          const k = nodes.length - 1;
+          edges.push([k, idx, partner]);
+          desc(k, depth + 1);
+        });
+      };
+      desc(f, 0);
+      const minC = Math.min(...nodes.map((n) => n.col)), minR = Math.min(...nodes.map((n) => n.row));
+      const pos = nodes.map((n) => ({ x: (n.col - minC) * (W + GX) + 20, y: (n.row - minR) * (H + GY) + 20 }));
+      const width = Math.max(...pos.map((p) => p.x)) + W + 20, height = Math.max(...pos.map((p) => p.y)) + H + 20;
+      const lines = edges.map(([c, a, b]) => {
+        const ch = pos[c], pa = pos[a], pb = b >= 0 ? pos[b] : null;
+        const cx = ch.x + W / 2, top = ch.y;
+        const midY = top - GY / 2;
+        const parents = pb ? [pa, pb] : [pa];
+        const bottom = Math.max(...parents.map((q) => q.y + H));
+        const sameRow = pb && pa.y === pb.y && pa.y + H > ch.y - GY; // manželé vedle sebe (potomci)
+        if (sameRow) {
+          const y = pa.y + H / 2, x1 = pa.x + W, x2 = pb!.x;
+          return `M${x1} ${y}H${x2}M${(x1 + x2) / 2} ${y}V${midY}H${cx}V${top}`;
+        }
+        return parents.map((q) => `M${q.x + W / 2} ${q.y + H}V${Math.max(bottom, midY)}`).join('') +
+          `M${Math.min(cx, ...parents.map((q) => q.x + W / 2))} ${midY}H${Math.max(cx, ...parents.map((q) => q.x + W / 2))}M${cx} ${midY}V${top}`;
+      }).join('');
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      canvas.innerHTML = `<svg class="tree-lines" width="${width}" height="${height}" aria-hidden="true"><path d="${lines}"/></svg>` +
+        nodes.map((n, i) => {
+          const p = P[n.slug];
+          const sib = p.sib.length ? `<span class="tree-sib" title="${esc(p.sib.join('; '))}">${esc(p.sib.slice(0, 2).join('; '))}${p.sib.length > 2 ? ` +${p.sib.length - 2}` : ''}</span>` : '';
+          return `<div class="tree-node ${p.c}${n.focus ? ' is-focus' : ''}" style="left:${pos[i].x}px;top:${pos[i].y}px;width:${W}px;height:${H}px;border-left-color:${p.col ?? 'var(--line)'}" title="${esc(p.s)}">
+            <button type="button" data-slug="${n.slug}">${esc(p.n)}</button><a href="/osoba/${n.slug}/" aria-label="Stránka osoby ${esc(p.n)}">→</a>
+            <span class="tree-y">${esc(p.y || '')}</span>${sib}</div>`;
+        }).join('');
+      document.querySelector('.tree-bar strong')!.textContent = title;
+    }
+
+    function show() {
+      const o = new URLSearchParams(location.search).get('o');
+      const h = decodeURIComponent(location.hash.slice(1)) || (o && P[o] ? o : 'vse');
+      const line = data.lines.find((l) => `rod-${l.slug}` === h);
+      const koren = data.roots.find((r) => `koren-${r.key}` === h);
+      if (koren && P[koren.id]) {
+        render(koren.id, 99, 0, `Celý rodokmen – ${P[koren.id].n}`);
+        pick.value = h;
+      } else if (line && P[line.root]) {
+        render(line.root, 99, 99, `Rod ${line.name}`);
+        pick.value = h;
+      } else if (h !== 'vse' && P[h]) {
+        render(h, 3, 3, `Strom: ${P[h].n}`);
+        pick.value = '';
+      } else {
+        render(data.root, 99, 0, 'Celý rodokmen');
+        pick.value = 'vse';
+      }
+      const f = canvas.querySelector<HTMLElement>('.is-focus');
+      if (f) stage.scrollTo({ left: f.offsetLeft * scale - stage.clientWidth / 2 + W / 2, top: f.offsetTop * scale - stage.clientHeight / 2 });
+    }
+    pick.addEventListener('change', () => { location.hash = pick.value; });
+    canvas.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-slug]');
+      if (b) location.hash = b.dataset.slug!;
+    });
+    document.querySelectorAll<HTMLButtonElement>('.tree-bar .fan-btns button').forEach((b) => b.addEventListener('click', () => {
+      const z = Number(b.dataset.z);
+      scale = z ? Math.min(2, Math.max(0.3, scale * z)) : 1;
+      canvas.style.zoom = String(scale);
+    }));
+    // posun tažením myší (dotyk a touchpad scrollují nativně), Ctrl/⌘ + kolečko nebo sevření na touchpadu = zoom
+    let drag: { x: number; y: number; l: number; t: number; moved: boolean } | null = null;
+    stage.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'mouse' || e.button !== 0 || (e.target as HTMLElement).closest('button, a, select')) return;
+      drag = { x: e.clientX, y: e.clientY, l: stage.scrollLeft, t: stage.scrollTop, moved: false };
+    });
+    window.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+      drag.moved = true;
+      stage.classList.add('is-dragging');
+      stage.scrollLeft = drag.l - dx;
+      stage.scrollTop = drag.t - dy;
+    });
+    window.addEventListener('pointerup', () => { drag = null; stage.classList.remove('is-dragging'); });
+    stage.addEventListener('wheel', (e) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      e.preventDefault();
+      const r = stage.getBoundingClientRect();
+      const px = (stage.scrollLeft + e.clientX - r.left) / scale, py = (stage.scrollTop + e.clientY - r.top) / scale;
+      scale = Math.min(2, Math.max(0.3, scale * Math.exp(-e.deltaY * 0.01)));
+      canvas.style.zoom = String(scale);
+      stage.scrollLeft = px * scale - (e.clientX - r.left);
+      stage.scrollTop = py * scale - (e.clientY - r.top);
+    }, { passive: false });
+    window.addEventListener('hashchange', show);
+    if (window.innerWidth < 600) { scale = 0.7; canvas.style.zoom = String(scale); }
+    show();
+  </script>
+</Base>

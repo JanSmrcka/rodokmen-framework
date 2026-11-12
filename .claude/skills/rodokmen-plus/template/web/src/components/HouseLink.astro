@@ -1,0 +1,6 @@
+---
+import { houses, href, houseTitle } from '../lib/data.js';
+const { slug } = Astro.props;
+const h = slug ? houses[slug] : null;
+---
+{h ? <a class="person-link" href={href.house(h.slug)}>{houseTitle(h)}</a> : <span class="muted">neznámý dům</span>}

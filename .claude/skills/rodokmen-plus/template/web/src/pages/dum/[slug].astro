@@ -1,0 +1,168 @@
+---
+import Base from '../../layouts/Base.astro';
+import Record from '../../components/Record.astro';
+import Timeline from '../../components/Timeline.astro';
+import RecLinks from '../../components/RecLinks.astro';
+import Mentions from '../../components/Mentions.astro';
+import PersonLink from '../../components/PersonLink.astro';
+import { houses, records, dateKey, houseTitle, statusClass, config, href, span, people } from '../../lib/data.js';
+
+export function getStaticPaths() {
+  return Object.keys(houses).map((slug) => ({ params: { slug } }));
+}
+const h = houses[Astro.params.slug];
+const recs = [...new Set([...(h.records ?? []), ...h.family.flatMap((f) => f.records)])]
+  .filter((r) => records[r]).sort((a, b) => dateKey(records[a].date) - dateKey(records[b].date));
+// Mapy se stejnou „skupinou“ mají stejný výřez krajiny – ty jde prolínat přes sebe.
+const maps = h.maps ?? [];
+const cmpGroups = Object.entries(maps.filter((m) => m.group).reduce((a, m) => ((a[m.group] ??= []).push(m), a), {})).filter(([, l]) => l.length > 1);
+const cadastre = recs.filter((r) => records[r].kind === 'K');
+const isAnc = (x) => Boolean(x.person);
+---
+<Base title={houseTitle(h)} description={h.desc || `Dům ${houseTitle(h)} a předkové, kteří v něm žili`}>
+  <p class="crumbs"><a href="/domy/">Domy</a> · {h.obecSlug ? <a href={href.place(h.obecSlug)}>{h.obec}</a> : <span>{h.obec}</span>}</p>
+  <h1>{h.obec} čp. {h.cp}{h.name && <span class="muted"> – {h.name}</span>}</h1>
+  <div class="chips">
+    {h.kind && <span class="chip">{h.kind}</span>}
+    {h.processed ? <span class={`chip ${statusClass(h.st)}`}>{h.status}</span> : <span class="chip st-unk">dějiny domu zatím nezpracované</span>}
+    {h.ancestors.length > 0 && <span class="chip">{h.ancestors.length} {h.ancestors.length === 1 ? 'předek' : h.ancestors.length < 5 ? 'předkové' : 'předků'}</span>}
+  </div>
+  {h.desc && <p class="lead">{h.desc}</p>}
+  {config.maPribeh && config.pribehDum === h.slug && <p><a class="btn" href={config.pribehDomuStranka ? "/pribeh-domu/" : "/pribeh-rodu/"}>Přečíst příběh domu →</a></p>}
+
+  <h2>Předkové v tomto domě</h2>
+  {h.family.length ? (
+    <ol class="timeline">
+      {h.family.map((f) => (
+        <li class="doc anc">
+          <span class="tl-year">{span(f.since, f.until) || '?'}</span>
+          <div class="tl-body"><p><PersonLink slug={f.person} />{f.role && <span class="muted"> – {f.role}</span>}</p>
+            <p class="tl-meta small"><RecLinks ids={f.records} /></p></div>
+        </li>
+      ))}
+    </ol>
+  ) : <p class="muted">Z rodokmenu zatím nikoho v tomto domě nemáme doloženého.</p>}
+
+  <Mentions items={h.mentions} />
+
+  {!h.processed && (
+    <p class="note">Dějiny domu zatím nejsou zpracované – víme jen, kdo z rodiny tu žil (z matrik a sčítání lidu).
+      Co dalšího jde dohledat (držitelé v gruntovních knihách, staré mapy, katastr), ukazuje zpracovaný dům
+      {Object.values(houses).filter((x) => x.processed).map((x) => <> <a href={href.house(x.slug)}>{x.obec} čp. {x.cp}</a></>)}.</p>
+  )}
+
+  {h.processed && (
+    <>
+      {h.numbers.length > 0 && h.numbers.some((n) => n.when !== 'dnes') && (
+        <><h2>Čísla domu v čase</h2>
+          <ul class="facts">{h.numbers.map((n) => <li><strong>{n.num}</strong> <span class="muted">({n.when})</span></li>)}</ul></>
+      )}
+
+      {h.events.length > 0 && (<><h2>Časová osa domu</h2><Timeline events={h.events} /></>)}
+
+      {h.owners.length > 0 && (
+        <>
+          <h2>Držitelé</h2>
+          <p class="small muted">Zvýraznění jsou naši předkové – jméno vede na jejich stránku v rodokmenu.</p>
+          <div class="table-box"><table>
+            <thead><tr><th>Od</th><th>Do</th><th>Držitel</th><th>Jak dům získal</th><th>Doklad</th></tr></thead>
+            <tbody>
+              {h.owners.map((o) => (
+                <tr class={isAnc(o) ? 'anc' : ''}>
+                  <td class="small" style="white-space:nowrap">{o.since}</td>
+                  <td class="small" style="white-space:nowrap">{o.until}</td>
+                  <td>{o.person ? <a href={href.person(o.person)}>{o.name}</a> : o.name}{isAnc(o) && <span class="anc-mark">předek</span>}
+                    {o.note && <div class="small muted">{o.note}</div>}</td>
+                  <td class="small">{o.how}</td>
+                  <td><div class="src-line"><span class={`chip ${statusClass(o.st)}`}>{o.status}</span><RecLinks ids={o.records} /></div></td>
+                </tr>
+              ))}
+            </tbody>
+          </table></div>
+        </>
+      )}
+
+      {h.people.length > 0 && (
+        <>
+          <h2>Obyvatelé</h2>
+          <div class="grid2">
+            {h.people.map((p) => (
+              <div class={`card ${isAnc(p) ? 'anc' : ''}`}>
+                <h3>{p.person ? <a href={href.person(p.person)}>{p.name}</a> : p.name} {p.years && <span class="muted small">{p.years}</span>}{isAnc(p) && <span class="anc-mark">předek</span>}</h3>
+                {p.role && <p class="small"><strong>{p.role}</strong></p>}
+                {p.facts.length > 0 && <ul class="facts small">{p.facts.map((f) => <li>{f}</li>)}</ul>}
+                {p.note && <p class="small muted">{p.note}</p>}
+                <p class="small src-line"><span class={`chip ${statusClass(p.st)}`}>{p.status}</span><RecLinks ids={p.records} /></p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {maps.length > 0 && (
+        <>
+          <h2>Staré mapy a letecké snímky</h2>
+          {cmpGroups.map(([g, list]) => (
+            <section class="cmp" data-cmp>
+              <h3>Porovnání: {g}</h3>
+              <p class="small muted">Vyberte dvě mapy a posuvníkem je prolínejte.</p>
+              <p class="cmp-ctl">
+                <select data-a aria-label="první mapa">{list.map((m, i) => <option value={m.img} data-t={`${m.year} – ${m.title}`} selected={i === 0}>{m.year}</option>)}</select>
+                <input type="range" min="0" max="100" value="50" data-r aria-label="prolnutí" />
+                <select data-b aria-label="druhá mapa">{list.map((m, i) => <option value={m.img} data-t={`${m.year} – ${m.title}`} selected={i === list.length - 1}>{m.year}</option>)}</select>
+              </p>
+              <div class="cmp-box">
+                <img data-ia src={`/img/${list[0].img}.jpg`} alt="" />
+                <img data-ib src={`/img/${list[list.length - 1].img}.jpg`} alt="" style="opacity:0.5" />
+              </div>
+              <p class="cmp-names small muted"><span data-na>{list[0].year} – {list[0].title}</span><span data-nb>{list[list.length - 1].year} – {list[list.length - 1].title}</span></p>
+            </section>
+          ))}
+          <div class="docs">
+            {maps.map((m) => (
+              <figure>
+                <a href={m.full ? `/zdroje/${m.img}.jpg` : `/img/${m.img}.jpg`} target="_blank" rel="noopener"><img src={`/img/${m.img}.jpg`} alt={m.title} loading="lazy" /></a>
+                <figcaption><strong>{m.year}</strong> – {m.title}{m.desc && <><br />{m.desc}</>}<br />
+                  <span class="small">Zdroj: {m.url ? <a href={m.url} target="_blank" rel="noopener">{m.source}</a> : m.source}</span></figcaption>
+              </figure>
+            ))}
+          </div>
+        </>
+      )}
+
+      {(h.note || cadastre.length > 0) && (
+        <>
+          <h2>Katastr</h2>
+          {h.note && <p>{h.note}</p>}
+          {h.owners.filter((o) => /katastr/i.test(o.note)).map((o) => <p class="small">{o.note}</p>)}
+          {cadastre.length > 0 && <p class="small">Zápisy z katastru: <RecLinks ids={cadastre} /></p>}
+          <p class="small"><a href="https://nahlizenidokn.cuzk.gov.cz/" target="_blank" rel="noopener">Nahlížení do katastru nemovitostí →</a></p>
+        </>
+      )}
+
+      {h.docs.length > 0 && (
+        <>
+          <h2>Fotografie a dokumenty</h2>
+          <div class="docs">{h.docs.map((d) => <figure><a href={`/img/${d.img}.jpg`} target="_blank" rel="noopener"><img src={`/img/${d.img}.jpg`} alt={d.caption} loading="lazy" /></a><figcaption>{d.caption}</figcaption></figure>)}</div>
+        </>
+      )}
+    </>
+  )}
+
+  <h2>Prameny</h2>
+  {recs.length ? <div class="recs">{recs.map((r) => <Record id={r} showPeople exclude={h.slug} />)}</div>
+    : <p class="muted">K tomuto domu zatím nemáme přečtený zápis.</p>}
+
+  <script>
+    for (const s of document.querySelectorAll<HTMLElement>('[data-cmp]')) {
+      const a = s.querySelector<HTMLSelectElement>('[data-a]')!, b = s.querySelector<HTMLSelectElement>('[data-b]')!;
+      const ia = s.querySelector<HTMLImageElement>('[data-ia]')!, ib = s.querySelector<HTMLImageElement>('[data-ib]')!;
+      const r = s.querySelector<HTMLInputElement>('[data-r]')!;
+      const na = s.querySelector<HTMLElement>('[data-na]')!, nb = s.querySelector<HTMLElement>('[data-nb]')!;
+      const name = (sel: HTMLSelectElement) => sel.selectedOptions[0]?.dataset.t ?? '';
+      a.addEventListener('change', () => { ia.src = `/img/${a.value}.jpg`; na.textContent = name(a); });
+      b.addEventListener('change', () => { ib.src = `/img/${b.value}.jpg`; nb.textContent = name(b); });
+      r.addEventListener('input', () => { ib.style.opacity = String(Number(r.value) / 100); });
+    }
+  </script>
+</Base>

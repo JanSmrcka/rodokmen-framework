@@ -1,0 +1,28 @@
+{
+ "popis": "Názvy obcí pro čtení matrik (kurent/latina/němčina). Ověřovat proti Hosák–Šrámek / Profous; pole overeno = odkud.",
+ "mista": [
+  {
+   "cesky": "Horní Lhota",
+   "nemecky": "Ober-Lhotta",
+   "historicke_tvary": [
+    "Lhotta superior",
+    "Hornj Lhota"
+   ],
+   "okres": "Pelhřimov",
+   "fara_do_1785": "Dolní Lhota",
+   "fara_po_1785": "Dolní Lhota",
+   "overeno": "ukázka – vymyšleno",
+   "zdroj": "",
+   "pozn": ""
+  }
+ ],
+ "nejasne": [
+  {
+   "zapis": "Lhotta",
+   "kontext": "křest 1790, otec z „Lhotta“",
+   "navrh": "Horní Lhota (?)",
+   "jistota": "nízká",
+   "pozn": "v okolí víc Lhot"
+  }
+ ]
+}

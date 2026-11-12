@@ -1,0 +1,91 @@
+---
+// Strom „rejstřík generací“: střed vlevo, předci po generacích ve sloupcích doprava. Klepnutí na osobu ji udělá středem (#slug).
+import Base from '../layouts/Base.astro';
+import ViewSwitch from '../components/ViewSwitch.astro';
+import { people, lineByK, root, statusClass } from '../lib/data.js';
+const tree = {
+  root: root.slug,
+  people: Object.fromEntries(Object.values(people).map((p) => [p.slug, {
+    n: p.name, y: p.years, c: statusClass(p.st), f: p.father, m: p.mother,
+    col: p.line && lineByK[p.line] ? lineByK[p.line].color : null,
+  }])),
+};
+---
+<Base title="Strom" wider>
+  <div class="gen-head">
+    <h1 class="gen-title">Předci</h1>
+    <ViewSwitch current="strom" />
+  </div>
+  <nav class="gen-crumbs crumbs" aria-label="Cesta ke středu"></nav>
+  <div class="gen-grid" aria-live="polite"></div>
+  <p class="small muted gen-hint">Barva nahoře = rod, čárkovaně = pravděpodobné nebo od rodiny. Klepnutím na osobu se z ní stane střed stromu, odkazem „stránka“ otevřete její detail.</p>
+  <script type="application/json" id="gen-data" set:html={JSON.stringify(tree)} />
+  <script>
+    type P = { n: string; y: string; c: string; f: string | null; m: string | null; col: string | null };
+    const data = JSON.parse(document.getElementById('gen-data')!.textContent!) as { root: string; people: Record<string, P> };
+    const P = data.people;
+    const grid = document.querySelector<HTMLElement>('.gen-grid')!;
+    const crumbs = document.querySelector<HTMLElement>('.gen-crumbs')!;
+    const title = document.querySelector<HTMLElement>('.gen-title')!;
+    const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
+    const LABELS = ['Střed', 'Rodiče', 'Prarodiče', 'Praprarodiče'];
+    const label = (g: number) => LABELS[g] ?? `${g + 1}. generace`;
+
+    /** Cesta od výchozí osoby ke středu po rodičích (pro drobečky); null, když střed není předek. */
+    function pathTo(target: string): string[] | null {
+      const q: string[][] = [[data.root]];
+      const seen = new Set<string>();
+      while (q.length) {
+        const path = q.shift()!;
+        const s = path[path.length - 1];
+        if (s === target) return path;
+        if (seen.has(s)) continue;
+        seen.add(s);
+        for (const par of [P[s]?.f, P[s]?.m]) if (par && P[par]) q.push([...path, par]);
+      }
+      return null;
+    }
+
+    function card(slug: string | null, focus = false) {
+      if (!slug || !P[slug]) return '<div class="gen-card gen-empty">neznámý</div>';
+      const p = P[slug];
+      const more = P[p.f ?? ''] || P[p.m ?? ''];
+      return `<div class="gen-card ${p.c}${focus ? ' is-focus' : ''}" style="--c:${p.col ?? 'var(--line-ostatni)'}">
+        <button type="button" data-slug="${slug}">${esc(p.n)}</button>
+        <span class="gen-y">${esc(p.y || '')}${more && !focus ? ' <span class="gen-more" aria-label="má známé rodiče">↑</span>' : ''}</span>
+        <a href="/osoba/${slug}/">stránka</a></div>`;
+    }
+
+    function render(focus: string) {
+      const gens = window.innerWidth <= 720 ? 3 : window.innerWidth <= 1100 ? 4 : 5;
+      let level: (string | null)[] = [focus];
+      const cols: string[] = [];
+      for (let g = 0; g < gens; g++) {
+        if (g > 0 && !level.some(Boolean)) break;
+        cols.push(`<section class="gen-col"><h2 class="gen-label">${label(g)}</h2><div class="gen-cards">${level.map((s) => card(s, g === 0)).join('')}</div></section>`);
+        level = level.flatMap((s) => (s && P[s] ? [P[s].f, P[s].m] : [null, null]));
+      }
+      grid.style.setProperty('--cols', String(cols.length));
+      grid.innerHTML = cols.join('');
+      const path = pathTo(focus);
+      crumbs.innerHTML = path && path.length > 1
+        ? path.map((s, i) => (i === path.length - 1 ? `<span>${esc(P[s].n)}</span>` : `<a href="#${s}">${esc(P[s].n.split(' ')[0])}</a>`)).join(' › ')
+        : focus !== data.root ? `<a href="#${data.root}">zpět na ${esc(P[data.root].n)}</a>` : '';
+      title.textContent = `Předci – ${P[focus].n}`;
+    }
+
+    function show() {
+      const h = decodeURIComponent(location.hash.slice(1));
+      const o = new URLSearchParams(location.search).get('o');
+      render(P[h] ? h : o && P[o] ? o : data.root);
+    }
+    grid.addEventListener('click', (e) => {
+      const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-slug]');
+      if (b) { location.hash = b.dataset.slug!; window.scrollTo({ top: 0 }); }
+    });
+    window.addEventListener('hashchange', show);
+    let w = window.innerWidth;
+    window.addEventListener('resize', () => { if (Math.abs(window.innerWidth - w) > 50) { w = window.innerWidth; show(); } });
+    show();
+  </script>
+</Base>

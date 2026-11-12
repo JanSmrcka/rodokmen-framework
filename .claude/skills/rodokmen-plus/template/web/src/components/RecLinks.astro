@@ -1,0 +1,7 @@
+---
+// Odkazy na zápisy, které údaj dokládají – kartičky s ikonou dokumentu (druh + datum).
+import { records, href } from '../lib/data.js';
+const { ids = [] } = Astro.props;
+const list = ids.filter((r) => records[r]);
+---
+{list.length > 0 && <span class="src-cards">{list.map((r) => <a class="src-card" href={href.record(r)} title={records[r].title}>{records[r].kindName} {records[r].date}</a>)}</span>}

@@ -1,0 +1,22 @@
+---
+import RecLinks from './RecLinks.astro';
+import { statusClass } from '../lib/data.js';
+const { events = [] } = Astro.props;
+const legend = [...new Map(events.map((e) => [e.st, e.status])).entries()];
+---
+<ol class="timeline">
+  {events.map((e) => (
+    <li class={e.st}>
+      <span class="tl-year">{e.year}</span>
+      <div class="tl-body">
+        <p>{e.text}</p>
+        <p class="tl-meta small muted">
+          {e.st !== 'doc' && <span class={`chip ${statusClass(e.st)}`}>{e.status}</span>}
+          {e.source && <span class="tl-src">{e.source}</span>}
+          <RecLinks ids={e.records} />
+        </p>
+      </div>
+    </li>
+  ))}
+</ol>
+{legend.length > 1 && <p class="tl-legend small muted">{legend.map(([st, label]) => <span><i class={`lg ${st}`}></i>{label}</span>)}</p>}
