@@ -319,3 +319,5 @@ python3 -I ../tools/test_rdb.py   # smoke test CLI (běžící `npm run dev` + d
 
 Skill `rodokmen-plus` vychází z projektu [rodokmen-plus](https://github.com/zbysekvoda/rodokmen-plus).
 Nápady a chyby skillu posílejte tam jako issue.
+
+Licence: MIT, viz [LICENSE](LICENSE).
