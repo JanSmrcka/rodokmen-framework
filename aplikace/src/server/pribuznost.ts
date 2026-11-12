@@ -106,6 +106,57 @@ function isHalfSibling(gr: Graf, a: string, b: string) {
   return common === 1 && pa.length === 2 && pb.length === 2;
 }
 
+// polorodí: děti společného předka na obou cestách mají jen jednoho rodiče společného
+// (nevlastní bratr, nevlastní strýc, nevlastní bratranec…)
+function isHalfBlood(gr: Graf, v: string, t: string, b: Blood): boolean {
+  if (b.up === 0 || b.down === 0) return false;
+  const ca = b.up === 1 ? v : onPath(gr, v, b.up - 1, b.via, 1);
+  const cb = b.down === 1 ? t : onPath(gr, t, b.down - 1, b.via, 1);
+  return !!ca && !!cb && ca !== cb && isHalfSibling(gr, ca, cb);
+}
+
+const half = (label: string) => (label.startsWith("nevlastní ") ? label : `nevlastní ${label}`);
+
+// všichni nejbližší společní předci (každá samostatná cesta příbuzenství); manželský pár = jedna cesta
+function commonAncestors(gr: Graf, a: string, b: string): Blood[] {
+  const ua = gr.ancestors(a);
+  ua.set(a, 0);
+  const ub = gr.ancestors(b);
+  ub.set(b, 0);
+  const common = [...ua.keys()].filter((id) => ub.has(id));
+  // nejbližší: žádný jiný společný předek není jeho potomkem
+  const lowest = common.filter((c) => !common.some((d) => d !== c && gr.ancestors(d).has(c)));
+  const out: Blood[] = [];
+  for (const c of lowest.sort((x, y) => ua.get(x)! + ub.get(x)! - (ua.get(y)! + ub.get(y)!) || x.localeCompare(y))) {
+    const up = ua.get(c)!;
+    const down = ub.get(c)!;
+    if (out.some((o) => o.up === up && o.down === down && gr.spouses(o.via).includes(c))) continue;
+    out.push({ up, down, via: c });
+  }
+  return out;
+}
+
+export interface Cesta {
+  label: string;
+  up: number;
+  down: number;
+  via: string; // společný předek (u páru jeden z nich)
+  half: boolean;
+}
+
+// všechny pokrevní cesty mezi dvěma osobami (dvojí příbuzenství, sňatky v rodině)
+export function vsechnyCesty(gr: Graf, viewerId: string, targetId: string): Cesta[] {
+  const v = gr.main(viewerId);
+  const t = gr.main(targetId);
+  if (v === t) return [];
+  const sex = (gr.nodes.get(t)?.sex ?? "U") as S;
+  return commonAncestors(gr, v, t).map((b) => {
+    const h = isHalfBlood(gr, v, t, b);
+    const base = unevenCousin(gr, v, t, b, sex) ?? bloodLabel(b.up, b.down, sex);
+    return { label: h ? half(base) : base, up: b.up, down: b.down, via: b.via, half: h };
+  });
+}
+
 export function pribuznost(gr: Graf, viewerId: string, targetId: string): Pribuznost {
   const v = gr.main(viewerId);
   const t = gr.main(targetId);
@@ -115,9 +166,8 @@ export function pribuznost(gr: Graf, viewerId: string, targetId: string): Pribuz
 
   const blood = nearestCommon(gr, v, t);
   if (blood) {
-    const label =
-      unevenCousin(gr, v, t, blood, sex) ??
-      bloodLabel(blood.up, blood.down, sex, blood.up === 1 && blood.down === 1 && isHalfSibling(gr, v, t));
+    const base = unevenCousin(gr, v, t, blood, sex) ?? bloodLabel(blood.up, blood.down, sex);
+    const label = isHalfBlood(gr, v, t, blood) ? half(base) : base;
     const kind = blood.down === 0 ? "predek" : blood.up === 0 ? "potomek" : "pokrevni";
     return { label, kind, ...blood };
   }

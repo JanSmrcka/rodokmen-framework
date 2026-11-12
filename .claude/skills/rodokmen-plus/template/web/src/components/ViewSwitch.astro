@@ -1,7 +1,0 @@
----
-// Přepínač pohledů na předky: Strom / Vějíř / Předci / Osa s vazbami / Vějíř v čase / Řeka času. slug = osoba, na kterou se pohled zaměří.
-const { slug = null, current = null } = Astro.props;
-const q = slug ? `?o=${slug}` : '';
-const views = [['strom', 'Generace', `/strom/${slug ? '#' + slug : ''}`], ['pasy', 'Rody', '/pasy/'], ['vejir', 'Vějíř', `/vejir/${q}`], ['cely', 'Celý strom', `/strom-cely/${q}`], ['predci', 'Předci', '/predci/'], ['osa', 'Osa s vazbami', `/osa-vazby/${q}`], ['vejir-cas', 'Vějíř v čase', `/vejir-cas/${q}`], ['reka', 'Řeka času', `/reka/${q}`]];
----
-<nav class="view-switch" aria-label="Pohled">{views.map(([k, label, url]) => <a href={url} aria-current={k === current ? 'page' : undefined}>{label}</a>)}</nav>

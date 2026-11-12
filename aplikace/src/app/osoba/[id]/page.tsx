@@ -139,7 +139,7 @@ export default async function PersonPage({ params }: PageProps<"/osoba/[id]">) {
               <Section key={label} title={label}>
                 <div className="grid gap-2">
                   {ids.map((x) => (
-                    <PersonChip key={x} site={site} id={x} />
+                    <PersonChip key={x} site={site} id={x} sub={label === "Manželé" ? p.spouseEnds?.[x] : undefined} />
                   ))}
                 </div>
               </Section>

@@ -1,0 +1,48 @@
+# Typy, lint a testy aplikace proti Postgresu (služba v CI) + kontrola Python nástrojů.
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  aplikace:
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: rodokmen
+          POSTGRES_PASSWORD: rodokmen
+          POSTGRES_DB: rodokmen_test
+        ports: ["5433:5432"]
+        options: --health-cmd "pg_isready -U rodokmen" --health-interval 2s --health-retries 30
+    env:
+      DATABASE_URL: postgres://rodokmen:rodokmen@localhost:5433/rodokmen_test
+      TEST_DATABASE_URL: postgres://rodokmen:rodokmen@localhost:5433/rodokmen_test
+    defaults:
+      run:
+        working-directory: aplikace
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: aplikace/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npx eslint src tests
+      - run: npm test
+
+  nastroje:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Python nástroje se dají načíst
+        run: python3 -I -m py_compile tools/*.py tools/archiv/*.py
+      - name: Nápověda CLI
+        run: python3 -I tools/rdb.py -h > /dev/null

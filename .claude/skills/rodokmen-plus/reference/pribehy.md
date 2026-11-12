@@ -56,7 +56,7 @@ jde později doplnit. Uživateli to nabídni, i když dřív řekl „až bude v
    …
    ```
    a ulož: `python3 -I tools/rdb.py pribeh uloz pribeh-novakovych pracovni/pribeh-novakovych.md --titulek "Příběh Novákových"
-   --perex "Jedna věta, která chytí – od koho k komu příběh vede." --druh pribeh_rodu --rod novakove`.
+   --perex "Jedna věta, která chytí – od koho k komu příběh vede." --druh pribeh --rod novakove`. Druh `pribeh` (seznam „Příběhy“ na webu ukazuje `pribeh` i `pribeh_rodu`).
    Úprava = stejný příkaz znovu (titulek a perex zůstanou, když je nezadáš). Na úvodní stránce se ukáže název a perex.
 
 **Jak má vypadat** (osvědčený tvar, asi 800–1500 slov):

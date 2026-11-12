@@ -141,6 +141,13 @@ async function assertPersons(tx: Tx, ids: string[]) {
   if (missing.length) throw badRequest(`Neznámé osoby: ${missing.join(", ")}`);
 }
 
+// existující vztah (manželé bez ohledu na pořadí)
+export async function findRelation(tx: Tx, type: "rodic" | "manzele", aId: string, bId: string): Promise<number | null> {
+  const pairs = type === "manzele" ? or(and(eq(relation.aId, aId), eq(relation.bId, bId)), and(eq(relation.aId, bId), eq(relation.bId, aId))) : and(eq(relation.aId, aId), eq(relation.bId, bId));
+  const [r] = await tx.select({ id: relation.id }).from(relation).where(and(eq(relation.type, type), pairs));
+  return r?.id ?? null;
+}
+
 export async function addRelation(tx: Tx, actor: Actor, inp: z.infer<typeof V.RelationIn>) {
   requireEdit(actor);
   await assertPersons(tx, [inp.aId, inp.bId]);
@@ -155,7 +162,7 @@ export async function addRelation(tx: Tx, actor: Actor, inp: z.infer<typeof V.Re
   }
   const [r] = await tx
     .insert(relation)
-    .values({ type: inp.type, aId: inp.aId, bId: inp.bId, certainty: inp.certainty, note: inp.note ?? null, createdBy: actor.name })
+    .values({ type: inp.type, aId: inp.aId, bId: inp.bId, certainty: inp.certainty, note: inp.note ?? null, endReason: inp.endReason ?? null, endText: inp.endText ?? null, createdBy: actor.name })
     .onConflictDoNothing()
     .returning();
   if (!r) throw conflict(`Vztah ${inp.type} ${inp.aId} → ${inp.bId} už existuje.`);
@@ -164,7 +171,12 @@ export async function addRelation(tx: Tx, actor: Actor, inp: z.infer<typeof V.Re
   return r;
 }
 
-export async function updateRelation(tx: Tx, actor: Actor, id: number, patch: { certainty?: z.infer<typeof V.Certainty>; note?: string | null }) {
+export async function updateRelation(
+  tx: Tx,
+  actor: Actor,
+  id: number,
+  patch: { certainty?: z.infer<typeof V.Certainty>; note?: string | null; endReason?: "umrti" | "rozvod" | "rozluka" | "jine" | null; endText?: string | null },
+) {
   requireEdit(actor);
   const [before] = await tx.select().from(relation).where(eq(relation.id, id));
   must(before, `vztah ${id}`);
@@ -214,9 +226,12 @@ export async function addEvent(tx: Tx, actor: Actor, inp: z.input<typeof V.Event
   for (const s of inp.sources ?? []) {
     await addCitation(tx, actor, { eventId: e.id, ...s });
     // osoby události patří i k zápisu, ze kterého je doložená
+    // role podle druhu zápisu (úmrtní zápis s datem narození = pořád „zemřelý“), jinak podle události
     if (s.recordKey) {
+      const [rec] = await tx.select({ kind: record.kind }).from(record).where(eq(record.key, s.recordKey));
+      const byKind = rec?.kind === "N" ? "dite" : rec?.kind === "Z" ? "zemrely" : null;
       for (const p of persons) {
-        const role = p.role !== "hlavni" ? p.role : (RECORD_ROLE[e.type] ?? "zminen");
+        const role = p.role !== "hlavni" ? p.role : (byKind ?? RECORD_ROLE[e.type] ?? "zminen");
         await linkRecordPerson(tx, s.recordKey, p.personId, role);
       }
     }

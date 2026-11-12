@@ -19,6 +19,7 @@
     "db:zaloha": "tsx --conditions=react-server scripts/zaloha.mts",
     "token": "tsx --conditions=react-server scripts/token.mts",
     "admin": "tsx --conditions=react-server scripts/admin.mts",
+    "setup": "tsx --conditions=react-server scripts/setup.mts",
     "vercel-build": "tsx --conditions=react-server scripts/migrate.mts && next build",
     "import": "tsx --conditions=react-server scripts/import.mts",
     "db:z-produkce": "tsx --conditions=react-server scripts/z-produkce.mts"

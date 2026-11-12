@@ -22,9 +22,11 @@ Mladší knihy jsou na matričním úřadě obce s rozšířenou působností / 
    Hledej obec v popisu svazku (`aron_search.py "Obec"`), ne jen v názvu – a hledej i podle obce, ne jen podle fary
    z pozdějšího zápisu: obec mohla mít vlastní matriku (filiální kostel, lokálie), i když list vydala mateřská fara.
    Obec rozdělená mezi dvě fary má dvě řady knih, každou jen pro „svá“ čísla domů.
+   **Farnost nehádej podle sousedních vsí** – ověř ji v seznamu obcí farního obvodu (u SOA Třeboň pole „Farní obvod
+   (1862)“ na stránce fary, jinde popis svazků). Při ztotožnění obce pomůže i číslo domu: malá osada nemůže mít čp. 30.
 2. **Svazek podle roku a druhu.** Pozor na překryvy: jedna kniha pro více obcí, zvláštní knihy pro jednotlivé obce.
    **Druhopisy** (duplikáty pro děkanát nebo úřad, např. „T“ svazky v ZA Opava) mívají N, O a Z jednoho roku u sebe –
-   hodí se, když originál chybí, je nečitelný nebo velký.
+   hodí se, když originál chybí, je nečitelný nebo velký. Než napíšeš „kniha není online“, projdi **celý** seznam knih fary.
 3. **Index, pak kniha.** Index řazený po písmenech a letech dá stránku/folio; snímek odhadni (snímek ≈ folio × 1 až 2) a dolaď.
    Starší rejstříky (18. stol.) občas ukazují o 1–4 strany vedle – když zápis na udané straně není, listuj kolem.
    Posun „snímek – strana“ se v knize mění (vložené listy, chybějící strany) – přečti číslo strany na náhledu a dopočítej.
@@ -32,6 +34,9 @@ Mladší knihy jsou na matričním úřadě obce s rozšířenou působností / 
    rychle až do 17. století. Rejstříky bývají podle **německého pravopisu**: česká jména na O a V hledej i pod W
    (Otava = Wotawa, Vávra = Wawra). Knihy pro více obcí bývají řazené po obcích, rejstřík na konci.
    Velké fary mají rejstříky i jako **samostatné svazky** (např. rejstřík oddaných přes 300 let) – hledej je nejdřív.
+   **Farní indexy N/O/Z** bývají v rámci písmene chronologické, ne abecední; sloupce = druh N/O/Z, rok, strana, římské
+   číslo knihy fary (≠ číslo knihy v archivu – převod si zapiš do popisu svazku). Strany u starých let mohou odkazovat
+   na starší nebo jinou knihu – když nesedí, listuj rovnou oddíl obce.
    **Když matrika chybí** (není online nebo se nedochovala), zkus rejstřík – bývá vedený zvlášť a přežil i tam, kde kniha
    ne. Zápis v rejstříku dokládá datum, místo a otce; zapiš ho jako `prob` (opis, ne originál) a matriku zkus později.
 4. **Bez indexu: listuj chronologicky.** Odhadni pozici podle let na prvních a posledních snímcích svazku (půlení intervalu).
@@ -42,6 +47,8 @@ Mladší knihy jsou na matričním úřadě obce s rozšířenou působností / 
 5. **Přečti celý zápis**, pak se podívej i na okolí (dvojčata, další děti stejných rodičů).
 6. **Sňatek se obvykle konal ve farnosti nevěsty** (v jejím bydlišti) – hledej ho nejdřív tam, pak ve faře ženicha.
    Nedaří se? Ve křtu dítěte bývá (Praha ~1880–1890) připsané datum a místo sňatku rodičů – ověř ho v oddaných.
+   **Most přes 100letou lhůtu:** po ~1900 bývá na okraji křtu přípisek o sňatku (někdy i úmrtí) → oddací zápis; oddací
+   zápis 20. let má v poznámce data narození obou snoubenců a faru jejich křtu.
 7. **Rodina v katolické matrice chybí? Zkus evangelickou nebo židovskou.** Po toleranci (1781) vedly vlastní matriky
    evangelické sbory (a. v. i h. v.), jeden sbor pokrýval desítky obcí; v ARONu mají signatury „R …“ a `aron_search.py`
    je najde podle obce. Ve východních Čechách časté (Rychnovsko, Dobrušsko, Opočensko). Židovské matriky viz `portaly.md`.
@@ -51,7 +58,8 @@ Mladší knihy jsou na matričním úřadě obce s rozšířenou působností / 
    - **evangelická (toleranční) matrika** sboru, i když ves byla katolická (sbor pokrýval desítky obcí),
    - **gruntovní/pozemková kniha** (předání gruntu, manželka, výměnek) – na Moravě v ARON MZA, často online,
    - **katastry** (tereziánský, josefský, stabilní) – držitel čísla domu v daném roce,
-   - **sčítání lidu** – rok a místo narození celé domácnosti,
+   - **sčítání lidu** – rok a místo narození celé domácnosti; operáty bývají neúplné (chybí celé úseky čísel) –
+     nejdřív přečti sběrací arch (první snímky: všechna čísla domů s počtem osob), pak hledej dům,
    - **seznamy ztrát a databáze padlých** (muži 1865–1900), **noviny** (dražby, úřední vyhlášky, parte, učitelé),
    - **veřejné indexy dobrovolníků** a cizí stromy (jen vodítko, `mh`/`lit`),
    - **matriční úřad** (mladší než lhůta) – žádost přímého potomka, koncept do `pracovni/`, úkol `rdb.py ukol pridej … --druh badatelna`.
@@ -69,7 +77,8 @@ Mladší knihy jsou na matričním úřadě obce s rozšířenou působností / 
 - Příjmení se píše foneticky a mění se (Šaršon/Scharschon/Šaršoun, Kroupa/Kraupa). Hledej všechny varianty.
 - Ženská příjmení v němčině bez „-ová“ (Maria Novak = Marie Nováková).
 - Názvy obcí mívají staré tvary, třeba s předsunutým „V“ („Volešnice“ = Olešnice); při hledání obce zkus i ty.
-- Kurent: dlouhé „ſ“ vypadá jako „f“, „e“ jako „n“, „h“ s kličkou dolů. Při nejistotě porovnej se stejným písmenem
+- Kurent: dlouhé „ſ“ vypadá jako „f“, „e“ jako „n“, „h“ s kličkou dolů. Velké L × H (smyčka pod řádkem: „z Lhoty“ ×
+  „z Huty“), J × G (hlavička rejstříku „Lit. J“ vypadá jako „Lit. G“). Při nejistotě porovnej se stejným písmenem
   jinde na stránce stejné ruky – i u „divného“ příjmení (koncové „k“ psané skoro jako „r“: „-ek“ vypadá jako „-er“).
   Slovo rozdělené přes konec řádku („Urlau-“ / „ber“) dočti na začátku dalšího řádku.
 - Daty bývají svátky (*Dominica*, *festum S. Joannis*) – v nejasných případech dopočítej.
@@ -115,6 +124,8 @@ Mladší knihy jsou na matričním úřadě obce s rozšířenou působností / 
 
 ## Typické pasti (ze skutečného výzkumu)
 - Písař spletl jméno dědečka (Josef místo Václava) – rozhodne více zápisů téže rodiny.
+- **Rodné jméno předkyně** ber z jejího vlastního křtu, sňatku nebo úmrtí, ne ze zápisů vnoučat: ty občas uvedou
+  rodné příjmení její matky nebo jméno jejího otce místo jejího. Při rozporu hledej křest dítěte z doby, kdy žila.
 - Dítě zapsané pod jiným křestním jménem, než jakým ho volala rodina (Františka → v rodině Anna).
 - Sňatek pár měsíců před porodem nebo po něm – není chyba, jen „svatba na poslední chvíli“; zajímavost pro web.
 - Nemanželské dítě nese příjmení matky; otec chybí nebo je dopsán později (legitimace na okraji).

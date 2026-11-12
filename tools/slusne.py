@@ -163,9 +163,9 @@ def posoudit(host, co, kod, retry_after=None):
             pass
         return
     if kod == 403 and co == "dotaz" and not _byl_uspech(host):
-        raise SystemExit(f"{host} odmítl dotaz (HTTP 403) – buď chybí prohlížečový User-Agent / stránka není veřejná, "
-                         "nebo web zablokoval IP adresu (v prohlížeči „Sorry, you have been blocked“ → vypni VPN nebo "
-                         "zkus jinou síť). Neopakuj dotaz ve smyčce.")
+        raise SystemExit(f"{host} odmítl dotaz (HTTP 403). Nejčastěji portál blokuje nástroje, ne lidi: otevři ho v Chromu "
+                         "uživatele (skill matriky-v-prohlizeci) – když tam jde, čti v prohlížeči; VPN nepomůže. Jen když "
+                         "i prohlížeč ukáže „Sorry, you have been blocked“, je zablokovaná IP (jiná síť). Neopakuj dotaz ve smyčce.")
     if kod in (429, 503) or (kod == 403 and co == "dotaz"):
         sekund = BLOKACE
         if retry_after and str(retry_after).isdigit():

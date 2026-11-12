@@ -12,6 +12,7 @@ hledání; přihlášení členové rodiny mohou posílat vodítka (údaje od ro
 | `npm install` | jednou na začátku |
 | `npm run db:up` | spustí lokální databázi (Docker; opakovat nevadí) |
 | `npm run dev` | náhled na http://localhost:3000 |
+| `npm run db:seed` | fiktivní ukázková rodina do prázdné lokální DB (vyzkoušení, vývoj; nikdy proti produkci) |
 | `npm run token -- <nazev> agent` | API token pro AI / skripty (ulož do `.env` jako `RODOKMEN_API_TOKEN`) |
 | `npm run admin -- <id osoby>` | první správce webu (žijící osoba ve stromu) – vypíše jméno a heslo |
 | `npm test` | testy aplikace |

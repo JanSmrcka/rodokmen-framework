@@ -209,7 +209,7 @@ def login_files(cfg):
     answer = norm_answer(login.get("odpoved", ""))
     tpl = open(os.path.join(WEB, "prihlaseni.sablona.html"), encoding="utf-8").read()
     if "rodokmen:" not in tpl:   # stará šablona (do 0.4.0) ukládá do cookie odpověď – s novou bránou by se nikdo nepřihlásil
-        sys.exit("CHYBA: web/ má starou šablonu přihlášení. Aktualizujte projekt: python3 -I <skill>/tools/novy_projekt.py <složka projektu>")
+        sys.exit("CHYBA: web/ má starou šablonu přihlášení. Starý web už se nepoužívá – rodinný web je aplikace v aplikace/.")
     contact = cfg.get("kontakt") or {}
     hint = ""
     if contact.get("email"):

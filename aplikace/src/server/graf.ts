@@ -27,7 +27,10 @@ export interface GEdge {
   a: string;
   b: string;
   certainty: string;
+  end?: string | null; // konec manželství pro výpis („rozvedeni 1935“)
 }
+
+const END_LABEL: Record<string, string> = { rozvod: "rozvedeni", rozluka: "rozluka", jine: "manželství skončilo" };
 
 export class Graf {
   readonly nodes = new Map<string, GNode>();
@@ -256,7 +259,14 @@ export async function loadGraf(): Promise<Graf> {
   });
   const graf = new Graf(
     nodes,
-    rels.map((r) => ({ id: r.id, type: r.type, a: r.aId, b: r.bId, certainty: r.certainty })),
+    rels.map((r) => ({
+      id: r.id,
+      type: r.type,
+      a: r.aId,
+      b: r.bId,
+      certainty: r.certainty,
+      end: r.endReason && END_LABEL[r.endReason] ? [END_LABEL[r.endReason], r.endText].filter(Boolean).join(" ") : null,
+    })),
   );
   cache = { version, graf };
   return graf;

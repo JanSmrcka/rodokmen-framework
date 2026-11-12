@@ -1,5 +1,5 @@
 // Místa (s historickými názvy), domy (čísla, držitelé, obyvatelé, události) a varianty příjmení.
-import { asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { db } from "@/db";
 import {
@@ -73,6 +73,14 @@ export async function addPlaceName(tx: Tx, actor: Actor, slug: string, n: { name
   return r;
 }
 
+export async function deletePlaceName(tx: Tx, actor: Actor, slug: string, id: number) {
+  requireEdit(actor);
+  const [before] = await tx.select().from(placeName).where(and(eq(placeName.id, id), eq(placeName.placeSlug, slug)));
+  must(before, `název ${id} místa ${slug}`);
+  await tx.delete(placeName).where(eq(placeName.id, id));
+  await audit(tx, actor, "place_name", id, "delete", before, null);
+}
+
 export async function addPlaceEvent(tx: Tx, actor: Actor, slug: string, inp: z.infer<typeof V.PlaceEventIn>) {
   requireEdit(actor);
   const [r] = await tx
@@ -131,8 +139,9 @@ export async function upsertHouse(tx: Tx, actor: Actor, key: string | null, raw:
   const [pl] = await tx.select({ s: place.slug }).from(place).where(eq(place.slug, inp.placeSlug));
   if (!pl) throw badRequest(`Neznámé místo ${inp.placeSlug} – nejdřív PUT /mista/<slug>.`);
   const { numbers, events, holders, inhabitants, ...rest } = inp;
-  const row = { ...rest, key: k };
   const [before] = await tx.select().from(house).where(eq(house.key, k));
+  // jistota bez výslovné hodnoty u existujícího domu zůstává (výchozí „unk“ jen u nového)
+  const row = { ...rest, key: k, certainty: raw.certainty === undefined && before ? before.certainty : rest.certainty };
   const [after] = before
     ? await tx.update(house).set(row).where(eq(house.key, k)).returning()
     : await tx.insert(house).values({ ...row, createdBy: actor.name }).returning();

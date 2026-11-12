@@ -11,7 +11,7 @@ import * as M from "./mista";
 import { saveFinding } from "./nalez";
 import * as O from "./osoby";
 import * as P from "./prameny";
-import { pribuznost } from "./pribuznost";
+import { pribuznost, vsechnyCesty } from "./pribuznost";
 import { loadRody, rodyFor, rodyOfPersons, vetve } from "./rody";
 import { redactPerson } from "./soukromi";
 import { withTx } from "./tx";
@@ -185,8 +185,16 @@ r("POST", "vztahy", "vztah rodic (a = rodič, b = dítě) nebo manzele", async (
   const inp = await parse(V.RelationIn, c);
   return tx((t) => O.addRelation(t, c.actor, inp));
 });
-r("PATCH", "vztahy/:id", "úprava jistoty / poznámky vztahu", async (c) => {
-  const inp = await parse(z.object({ certainty: V.Certainty.optional(), note: z.string().nullable().optional() }), c);
+r("PATCH", "vztahy/:id", "úprava jistoty / poznámky / konce manželství {endReason: umrti|rozvod|rozluka|jine, endText}", async (c) => {
+  const inp = await parse(
+    z.object({
+      certainty: V.Certainty.optional(),
+      note: z.string().nullable().optional(),
+      endReason: z.enum(["umrti", "rozvod", "rozluka", "jine"]).nullable().optional(),
+      endText: z.string().nullable().optional(),
+    }),
+    c,
+  );
   return tx((t) => O.updateRelation(t, c.actor, int(c.params.id), inp));
 });
 r("DELETE", "vztahy/:id", "smazání vztahu", async (c) => tx((t) => O.deleteRelation(t, c.actor, int(c.params.id))));
@@ -224,12 +232,12 @@ r("GET", "graf/kekule", "?koren=<id> Kekulého čísla (výchozí kořen = přih
   if (!root) throw badRequest("Chybí ?koren=<id osoby>.");
   return [...g.kekule(root)].map(([k, id]) => ({ k, id, name: g.nodes.get(id)?.name ?? id }));
 });
-r("GET", "graf/pribuznost", "?od=<id>&k=<id> jak je osoba k příbuzná", async (c) => {
+r("GET", "graf/pribuznost", "?od=<id>&k=<id> jak je osoba k příbuzná (+ cesty: všechna pokrevní příbuzenství)", async (c) => {
   const g = await loadGraf();
   const od = q(c, "od") ?? c.actor.personId;
   const k = q(c, "k");
   if (!od || !k) throw badRequest("Použití: ?od=<id>&k=<id>");
-  return pribuznost(g, od, k);
+  return { ...pribuznost(g, od, k), cesty: vsechnyCesty(g, od, k) };
 });
 r("GET", "graf/predci", "?id=<id> předci s generací", async (c) => {
   const g = await loadGraf();
@@ -297,14 +305,17 @@ r("POST", "mista/:slug/nazvy", "další název místa {name, lang}", async (c) =
   const inp = await parse(z.object({ name: z.string(), lang: z.string().nullish(), note: z.string().nullish() }), c);
   return tx((t) => M.addPlaceName(t, c.actor, c.params.slug, inp));
 });
+r("DELETE", "mista/:slug/nazvy/:id", "smazání omylem přidaného názvu místa", async (c) =>
+  tx((t) => M.deletePlaceName(t, c.actor, c.params.slug, Number(c.params.id))),
+);
 r("POST", "mista/:slug/udalosti", "událost obce {year, text}", async (c) => {
   const inp = await parse(V.PlaceEventIn, c);
   return tx((t) => M.addPlaceEvent(t, c.actor, c.params.slug, inp));
 });
 r("GET", "domy", "seznam domů", async () => M.listHouses());
 r("GET", "domy/:key", "dům s čísly, držiteli, obyvateli a událostmi", async (c) => M.getHouse(c.params.key));
-r("PUT", "domy/:key", "založení / úprava domu (seznamy se nahradí)", async (c) => {
-  const inp = await parse(V.HouseIn, c);
+r("PUT", "domy/:key", "založení / úprava domu (seznamy se nahradí; bez certainty zůstane stávající)", async (c) => {
+  const inp = await parse(V.HouseIn.extend({ certainty: V.Certainty.optional() }), c);
   return tx((t) => M.upsertHouse(t, c.actor, c.params.key, inp));
 });
 r("PATCH", "domy/:key", "částečná úprava domu (seznamy jen když jsou uvedené)", async (c) => {

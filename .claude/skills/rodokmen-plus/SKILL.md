@@ -75,7 +75,7 @@ a `personId` u držitele či obyvatele domu. Uživatel může začít kterýmkol
    projektu. Instalace systémových věcí nech uživatele potvrdit; interaktivní příkazy mu dej s předponou `!`.
 2. Aplikace a databáze: `cd aplikace && npm install && npm run db:up && npm run db:migrate`, token
    `npm run token -- agent agent` → `.env` (`RODOKMEN_API_URL=http://localhost:3000`, `RODOKMEN_API_TOKEN=…`),
-   `npm run dev` → http://localhost:3000. V produkci (Vercel) je `RODOKMEN_API_URL` adresa webu a token vydá správce.
+   `npm run dev` → http://localhost:3000. Na vyzkoušení webu: `npm run db:seed` (fiktivní rodina, jen prázdná lokální DB). V produkci (Vercel) je `RODOKMEN_API_URL` adresa webu a token vydá správce.
 3. První osoba: `rdb.py osoba pridej --sex M --jmeno … --prijmeni … --narozeni "…" --jistota fam`, výchozí kořen webu
    `rdb.py api PUT nastaveni/vychozi_koren '{"value": "<id>"}'` (admin), název webu `nastaveni/nazev`. Účet správce
    webu: `npm run admin -- <id žijící osoby>`.
@@ -332,7 +332,7 @@ Podrobně `reference/pribehy.md` (rod), `reference-dum/pribehy.md` (dům), texty
   epidemie).
 - **Příběh rodu** nabídni, když má hlavní rod ~5 doložených generací; **příběh domu** při ~4 doložených držitelích
   nebo ~150 letech historie. Koncept do chatu ke schválení, pak `pracovni/pribeh_<slug>.md` a
-  `rdb.py pribeh uloz <slug> pracovni/pribeh_<slug>.md --titulek "…" --perex "…" --druh pribeh_rodu --rod <slug>`
+  `rdb.py pribeh uloz <slug> pracovni/pribeh_<slug>.md --titulek "…" --perex "…" --druh pribeh --rod <slug>`
   (dům `--druh pribeh_domu --dum <klíč>`). Text: `rdb.py pribeh ukaz <slug>`.
 - Víc příběhů najednou a jejich archivní ověření ve vlnách: skill `paralelni-badani`. Ověření námět často vyvrátí –
   na web jde jen ověřená verze.
@@ -377,18 +377,18 @@ pluginu (issue v repozitáři pluginu). **Nic sám neposílej.** Týká-li se po
 | Oblast | Akce |
 |---|---|
 | `osoba` | `ukaz <id>`, `hledej <text>`, `seznam`, `pridej [-j json] --sex --jmeno --prijmeni --narozeni --jistota …`, `uprav <id> …`, `jmeno <id> --druh po_snatku …`, `bocni <id>`, `smaz` |
-| `vztah` | `pridej rodic\|manzele <a> <b> --jistota --zaznam`, `uprav <id>`, `smaz <id>` |
+| `vztah` | `pridej rodic\|manzele <a> <b> --jistota --zaznam [--konec rozvod --konec-kdy 1935]`, `uprav <id> [--konec …]`, `smaz <id>` |
 | `udalost` | `pridej <typ> <osoba> --datum --misto --dum --text --jistota --zaznam --dalsi osoba:role`, `uprav <id> … --jistota`, `smaz` |
 | `bydliste`, `citace` | `pridej …`, `smaz <id>` |
 | `zaznam` | `ukaz <klíč>`, `hledej [text] --svazek --review --osoba`, `pridej <klíč> <json>` (celý zápis), `uprav <klíč> --review --titulek --prepis soubor …` |
 | `svazek` | `ukaz`, `seznam`, `pridej <klíč> --archiv --nazev …` |
 | `nalez <json\|->` | celý nález v jedné transakci |
 | `vyrez nahraj <klíč> <soubor> [--plny]`, `zvyrazneni <klíč> <json>` | obrázek výřezu, rámečky (běžně `vyrez.py`, `ramecek.py`) |
-| `misto` | `hledej`, `seznam`, `ukaz`, `pridej <slug> --nazev --lat --lon --dotaz --vzor --hypoteza`, `nazev <slug> <název> --jazyk`, `udalost` |
-| `dum` | `ukaz`, `seznam`, `pridej <json> [--klic]` |
+| `misto` | `hledej`, `seznam`, `ukaz`, `pridej <slug> --nazev --lat --lon --dotaz --vzor --hypoteza`, `nazev <slug> <název> --jazyk [--smaz]`, `udalost` |
+| `dum` | `ukaz`, `seznam`, `pridej <json> [--klic]`, `uprav <klíč> <json>` (jen uvedená pole) |
 | `prijmeni` | `hledej [text]`, `pridej <příjmení> <varianta>` |
 | `voditko` | `seznam [--otevrena] [--osoba] [--rod <slug>\|bez]` (bez `--rod` po rodech), `ukaz`, `pridej <text> --druh --osoba --od-osoby --kanal`, `uprav <id> --text --osoba`, `stav <id> <stav> --poznamka --zaznam` (stav `rozdeleno` = rozsekáno) |
-| `denik` | `posledni [N] [--rod] [--vetev <kořen> [--prarodic 4–7]]`, `hledej [text] --osoba --rod --vetev --prarodic --svazek --vysledek` (osoby u záznamu vždy – podle nich se řadí k rodu a větvi), `pridej <titulek> --vysledek --svazek --snimky --osoba --text`, `uprav <id> --osoba --zaznam --titulek --text` |
+| `denik` | `posledni [N] [--rod] [--vetev <kořen> [--prarodic 4–7]]`, `hledej [text] --osoba --rod --vetev --prarodic --svazek --vysledek` (osoby u záznamu vždy – podle nich se řadí k rodu a větvi), `pridej <titulek> --vysledek (… \| nedostupne) --svazek --snimky --osoba --text`, `uprav <id> --osoba --zaznam --titulek --text` |
 | `ukol` | `seznam [--vse] [--rod <slug>\|bez]` (bez `--rod` po rodech), `pridej <titulek> --text --druh --priorita --osoba` (osoby vždy – podle nich se úkol řadí k rodu), `stav <id> <stav>`, `uprav` |
 | `rod` | `seznam [--pro <osoba>]` (rody s počty vodítek a úkolů), `ukaz <slug>` (členové), `pridej <slug> --nazev --popis --barva --zakladatel` (jen pojmenování) |
 | `pribeh` | `seznam`, `ukaz <slug>`, `uloz <slug> <soubor.md> --titulek --perex --druh --rod --dum` |

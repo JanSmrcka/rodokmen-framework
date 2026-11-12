@@ -43,6 +43,13 @@
       "when": 1794255969195,
       "tag": "0005_voditko_rozdeleno",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794494295922,
+      "tag": "0006_konec_manzelstvi_nedostupne",
+      "breakpoints": true
     }
   ]
 }

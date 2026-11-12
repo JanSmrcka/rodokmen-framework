@@ -126,6 +126,9 @@ def fetch_image(dzi_url, level_offset=1, out="page.jpg", crop=None):
 
 
 if __name__ == "__main__":
+    if len(sys.argv) < 3 or sys.argv[1] in ("-h", "--help"):
+        print(__doc__)
+        sys.exit(0 if len(sys.argv) > 1 and sys.argv[1] in ("-h", "--help") else 2)
     apu = sys.argv[1]
     vol = volume(apu)
     tiles = tiles_by_order(vol)

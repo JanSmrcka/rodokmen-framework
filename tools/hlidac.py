@@ -8,7 +8,7 @@ Zastaví v Bashi:
   - shellový skript mimo tools/ s curl/wget.
 U WebFetch počká na volný termín webu a zablokovaný web (po 429/503) nepustí.
 Je to textová heuristika, ne neprůstřelná ochrana – zachytí ale dočasné skripty, které si agent napíše sám.
-Nastavení: .claude/settings.json projektu (zapisuje novy_projekt.py).
+Nastavení: .claude/settings.json projektu (hook PreToolUse).
 """
 import json, os, re, sys
 for _s in (sys.stdout, sys.stderr):

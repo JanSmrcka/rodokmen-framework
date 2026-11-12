@@ -6,7 +6,7 @@ import { Empty, PageHeader, Section } from "@/components/bits";
 
 export const metadata = { title: "Deník bádání" };
 
-const RESULT: Record<string, string> = { nalezeno: "nalezeno", nenalezeno: "nenalezeno", castecne: "částečně", jine: "" };
+const RESULT: Record<string, string> = { nalezeno: "nalezeno", nenalezeno: "nenalezeno", castecne: "částečně", jine: "", nedostupne: "pramen nedostupný" };
 
 export default async function LogPage() {
   const site = await getSite();

@@ -23,7 +23,7 @@ rdb.py misto udalost horni-lhota "Ves poprvé zmíněna v listině…" --rok 135
 ```
 Farnost, panství a dnešní obec patří do `--popis` (vlastní pole API nemá). Souřadnice dohledá `mista.py`/`mista_domy.py`.
 
-## Dům – `rdb.py dum pridej <soubor.json>` (JSON podle HouseIn)
+## Dům – `rdb.py dum pridej <soubor.json>` (JSON podle HouseIn; uvedené seznamy se nahradí). Jen pár polí: `rdb.py dum uprav <klíč> <json>`
 ```json
 {"placeSlug": "horni-lhota", "cp": "12", "name": "", "kind": "chalupa", "certainty": "doc",
  "description": "…", "lat": 49.432, "lon": 15.219, "note": "",
@@ -98,7 +98,7 @@ císařský otisk B2/a/6C 570, list 4", "url": "https://ags.cuzk.gov.cz/archiv/"
 existujícího dokumentu API zatím nemá – zatím v aplikaci.
 
 ## Texty, deník, vodítka
-- Deník bádání (i neúspěšné hledání): `rdb.py denik pridej "<co>" --vysledek nalezeno|nenalezeno|castecne --svazek <klic>
+- Deník bádání (i neúspěšné hledání): `rdb.py denik pridej "<co>" --vysledek nalezeno|nenalezeno|castecne|nedostupne --svazek <klic>
   --snimky "snímky 30–45" --text "rozsah, hledané varianty"`; před hledáním `rdb.py denik hledej <text>`.
 - Zajímavosti a příběhy: `rdb.py pribeh uloz <slug> pracovni/<slug>.md --titulek … --druh zajimavosti|pribeh_domu|pribeh --dum <klic>`
   (`pribehy.md`). Odkazy v textu: `[čp. 12](/dum/<klic>/)`, `[zápis](/zdroj/<klic>/)`.

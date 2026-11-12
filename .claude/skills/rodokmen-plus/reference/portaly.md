@@ -17,6 +17,10 @@ Matriky jsou online u osmi státních archivů – podle toho, **kde předci ži
 Adresy u nevyzkoušených portálů ověř při prvním použití (portály se mění). Pro pohraničí a mimo ČR viz `playbook.md` §2
 (Matricula pro Rakousko/Německo, Geneteka pro Polsko, FamilySearch pro Slovensko) a níže.
 
+**Nástroj dostane HTTP 403, ale v Chromu uživatele portál jde?** Blokovaný je nástroj (User-Agent, ochrana proti
+robotům), ne IP – VPN nepomůže a další pokusy nástrojem taky ne. Přejdi do prohlížeče (skill `matriky-v-prohlizeci`).
+Vyzkoušeno u eBadatelny, digi.ceskearchivy.cz (Třeboň) i Porta fontium.
+
 ## ARON (SOA Zámrsk) – hotové nástroje
 - **Hledání svazků:** `python3 -I tools/aron_search.py "Holice"` → řádky `apu_id | signatura, roky | druh, obce`.
   Popis obsahuje druh knihy (NAROZENÝCH / ODDANÝCH / ZEMŘELÝCH, index) a všechny obce farnosti.
@@ -34,6 +38,9 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
 - Obec nenalezena? Zkus název **bez přívlastku** („Lhota“ místo „Horní Lhota“) a starý název. Starší matriky
   (před ~1784) bývají ve faře sousedního města; indexy fary mají oddíly po vesnicích
   („Copulati Gross Lhota“).
+- Rejstříky uvnitř knih N/O někdy končí ~1890 – mladší léta jen listováním (~6 snímků na rok). Knihy pro víc obcí
+  bývají řazené po obcích (oddíly) – nejdřív najdi oddíl obce, pak rok.
+- **Sčítání 1921** (fond Okresní úřad): názvy souborů snímků obsahují číslo domu (`…-cp-001.jpg`) – dům najdeš bez listování.
 - Ber ohled na server: stahuj jen to, co čteš; žádné hromadné stahování celých svazků.
 
 ## SOA Třeboň (digi.ceskearchivy.cz) – `tools/trebon.py`, bez prohlížeče
@@ -47,6 +54,11 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   Ne každá kniha ho má; prázdný výsledek = rejstřík chybí, ne „osoba tam není“.
 - `trebon.py snimek <id_knihy> <snímek> pracovni/x.jpg [nahled]`, `trebon.py svazek <id_knihy>` (svazek do databáze přes API).
 - Trvalý odkaz: `https://digi.ceskearchivy.cz/<id_knihy>/<snímek>`.
+- Nástroj vrací HTTP 403 (i dlouhodobě), Chrome jde → čti v prohlížeči (`matriky-v-prohlizeci` → DigiArchiv; přísný
+  limit rychlosti, jmenný rejstřík celého archivu, e-rejstřík knihy).
+- **Fara obce:** stránka fary na portálu (Průzkumník → Matriky → sídlo) má pole „Farní obvod (1862)“ se seznamem obcí –
+  ověř tam, nehádej podle sousedních vsí.
+- Obce Jihlavska, které historicky ležely v Čechách, mají matriky v **MZA Brno** (Acta Publica), ne v Třeboni.
 - Některé fary mají knihy po vesnicích, které nejsou v seznamu svazků místa (Vacov → Žár) – hledej podle titulků knih fary.
 - **Civilní matriky (1920–1945) lidí bez vyznání** jsou v knihách okresních úřadů (např. Tábor, kniha 12304) a mají
   dobrovolnický rejstřík (`trebon.py rejstrik 12304 N`). Dobrá cesta, když farní matrika mlčí. V `svazky "Obec"`
@@ -68,6 +80,8 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
 - `link <kniha> <snímek>` → trvalý odkaz, `svazek <kniha>` → svazek do databáze přes API (klíč `pf_<kniha>`).
 - Bez prohlížečového User-Agentu portál vrací 403 (nástroj ho posílá). Jmenné hledání portál nemá – indexy jsou jen uvnitř knih
   (`*i`, `ooi`, `+i` v seznamu knih fary).
+- Fulltextové hledání (`searching/register?…`) blokuje přísněji než snímky: po ~150 snímcích za sezení vrátilo hned 403
+  → blokace 30 min. Hledej málo a dřív, než začneš stahovat.
 
 ## SOA Praha (eBadatelna, ebadatelna.soapraha.cz) – `tools/ebadatelna.py`, bez prohlížeče
 - `ebadatelna.py hledat "Obec"` → celé názvy lokalit („Lhota - obec X - okres Y“); `matriky "Obec"` (nebo celý název)
@@ -75,7 +89,7 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
 - `ebadatelna.py info <matrikaId>` → obsah knihy včetně **rozvržení stran po vesnicích** (např. „1–48 Ves A, 49–82 Ves B,
   1–30 Ves C …“ – každá ves může mít vlastní stránkování) – u takových knih neodhaduj snímek podle roku, ale podle stran
   dané vsi (číslo strany je nahoře na snímku). Takové knihy bývají řazené po vsích, ne chronologicky – je-li rejstřík,
-  začni jím.
+  začni jím. Rejstřík bývá **na konci knihy** (písmena po 1–2 snímcích).
 - `ebadatelna.py snimek <matrikaId> <snímek> pracovni/x.jpg [nahled] [x0,y0,x1,y1]`; `link`, `svazek` (klíč `ebad_<id>`).
 - **Archiválie** (urbáře, gruntovní a pozemkové knihy velkostatků – most přes 17. století): `a-info <archivalieId>`,
   `a-snimek`, `a-link`, `a-svazek` (klíč `ebad_a_<id>`). Archiválii nástroj nehledá – najdi ji na portálu v prohlížeči;
@@ -86,6 +100,7 @@ Adresy u nevyzkoušených portálů ověř při prvním použití (portály se m
   černobílé prahování kurentu škodí – vlasové tahy zdvojí nebo smažou.
 - Portál dává vždy celý snímek (nedlaždicuje); náhled a výřez dělá nástroj po stažení přes ImageMagick (`magick`).
   Denní údržba kolem 4:44 (asi 2 minuty).
+- `ebadatelna.py` dostal HTTP 403, ale portál v Chromu šel (seznam knih, snímky `/d/<id>/<n>`) → pokračuj v prohlížeči.
 
 ## AHMP Praha – `tools/ahmp_search.sh`, `tools/ahmp_scan.py`
 - `bash tools/ahmp_search.sh "Smíchov"` → svazky Sbírky matrik: popis | farnost | (XID, id, počet snímků).
@@ -222,6 +237,9 @@ A když osoba „chybí“ v očekávaných matrikách (stěhovala se se službo
 - **Dotazy:** Solr skládá diakritiku, ne pády – hledej obec v 6. a 2. pádě („v Horní Lhotě“, „z Horní Lhoty“).
   Filtr `datum_begin:[od TO do]` vyřadí čísla bez data – hledej bez filtru a rok čti z výstupu. Obec se jménem shodným
   s křestním jménem (např. Lukov, Bohdalov) dává šum – přidej druhé slovo. Facet `root_title` nefunguje, použij `root_pid`.
+- **POZOR – ndk.cz banuje IP:** ~10 dotazů `dnnt.py hledej`/`kontext` během pár minut skončilo
+  přesměrováním na `ndk.cz/bana` („Identita je zablokovaná“, odblokování jen e-mailem s IP adresou) – ban dopadl na IP
+  uživatele. Za sezení jen několik dotazů, s rozestupy, žádné dávky; před čtením po přihlášení už žádné hledání nástrojem.
 - `dnnt.py ocr klic=uuid:…` stáhne text veřejné strany; `dnnt.py kontext` bere slova jako AND (víc než 2–3 slova = 0).
   Úryvek z OCR je `lit`, ne `doc`.
 - **Regionální periodika** malých okresů v Krameriu často chybí – čti je přes celozemské listy (Moravská orlice,

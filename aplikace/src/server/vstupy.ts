@@ -98,6 +98,9 @@ export const RelationIn = z.object({
   bId: z.string(),
   certainty: Certainty.default("unk"),
   note: opt(z.string()),
+  // konec manželství (jen u manzele)
+  endReason: opt(z.enum(["umrti", "rozvod", "rozluka", "jine"])),
+  endText: opt(z.string()),
   sources: z.array(Source).default([]),
 });
 
@@ -294,7 +297,7 @@ export const LogIn = z.object({
   author: opt(z.string()),
   volumeKey: opt(z.string()),
   pages: opt(z.string()),
-  result: z.enum(["nalezeno", "nenalezeno", "castecne", "jine"]).default("jine"),
+  result: z.enum(["nalezeno", "nenalezeno", "castecne", "jine", "nedostupne"]).default("jine"),
   personIds: z.array(z.string()).default([]),
   recordKeys: z.array(z.string()).default([]),
   tipIds: z.array(z.number().int()).default([]),

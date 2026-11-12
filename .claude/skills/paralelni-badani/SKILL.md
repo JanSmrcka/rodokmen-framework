@@ -45,6 +45,8 @@ stojí kredity.
   (`voditko seznam --otevrena --rod …`, `ukol seznam --rod …`, `denik posledni 30 --rod …`), ne celý projekt.
 - **Po portálech, ne po osobách.** Pomocníci na stejném portálu sdílí jeho limit – tři pomocníci na jednom archivu
   nejsou rychlejší než jeden. Pro portály za ověřením v prohlížeči nejvýš 2 současně (`matriky-v-prohlizeci`).
+- Limit rychlosti nástrojů (`tools/slusne.py`) je společný všem pomocníkům na stejném webu; DigiArchiv Třeboň v prohlížeči
+  (≥ 20–30 s mezi snímky) a ndk.cz (jen pár dotazů za sezení, ban IP) jsou přísnější – takový portál jen jednomu pomocníkovi.
 - Offline úkoly (čtení už stažených snímků, analýza přepisů) jdou souběžně bez limitu.
 - Rozsah jednoho briefu ~1–2 h práce. Typicky 3–4 pomocníci najednou.
 - Pomocníci pracují ve stejném pracovním adresáři, ale každý jen ve své `pracovni/pom_<úkol>/` (snímky, JSON nálezů,

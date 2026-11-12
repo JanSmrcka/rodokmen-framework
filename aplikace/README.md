@@ -11,6 +11,7 @@ cp ../.env.example ../.env       # jednou; .env je v kořeni repa (čte ho i too
 npm install
 npm run db:up                    # Postgres v Dockeru (port 5433), databáze rodokmen + rodokmen_test
 npm run db:migrate               # schéma
+npm run setup -- --jmeno Petr --prijmeni Novák --pohlavi M   # prázdný rodokmen: vy jako kořen, účet správce, token pro AI
 npm run db:seed                  # fiktivní ukázková rodina (jen lokálně)
 npm run admin -- petr-novak-1980 # účet správce pro osobu ve stromu → vypíše jméno a heslo
 npm run token -- claude agent    # API token pro AI/skripty → do .env jako RODOKMEN_API_TOKEN
@@ -23,6 +24,7 @@ Další příkazy:
 |---|---|
 | `npm test` | testy (vitest) proti `rodokmen_test`; testovací DB se pokaždé vytvoří znovu |
 | `npm run typecheck` | kontrola typů |
+| `npm run setup -- …` | první spuštění prázdného rodokmenu (osoba, kořen stromu, správce, token) |
 | `npm run db:generate` | po změně `src/db/schema.ts` vytvoří SQL migraci v `drizzle/` |
 | `npm run db:reset` | lokální DB smazat, zmigrovat a naplnit ukázkou (jen localhost) |
 | `npm run db:studio` | prohlížeč tabulek |

@@ -174,7 +174,7 @@ def main():
     if not (cfg.get("prihlaseni") or {}).get("odpoved") and not (cfg.get("prihlaseni") or {}).get("otevreny"):
         warn.append("web.json: není nastavená odpověď na přihlašovací otázku – nasazení webu skončí chybou")
 
-    # ukázka z novy_projekt.py --ukazka (fiktivní Novákovi z Holic); skutečné příjmení Novák varování nespouští
+    # ukázka starého formátu (fiktivní Novákovi z Holic); skutečné příjmení Novák varování nespouští
     if "z Holic" in json.dumps(cfg, ensure_ascii=False) or (cfg.get("prihlaseni") or {}).get("odpoved") == "kovář":
         warn.append("web.json: jsou v něm ještě ukázkové texty (Novákovi) – nastav název, příběh a kontakt")
 

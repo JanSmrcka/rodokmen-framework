@@ -23,7 +23,8 @@ na webu jen čte (žijící ořezané) a posílá vodítka. **Chyba** = JSON `{"
 | 16–31, 32–63 … | každá další generace dvojnásobek |
 
 Otec předka k je 2k, matka 2k+1, dítě k // 2; muži mají sudá čísla. `rdb.py kekule [kořen]`, `rdb.py predci <id>`,
-`rdb.py pribuznost <od> <k>` („prapraděd“, „bratranec z 2. kolena“, „švagr“). Výchozí kořen = nastavení `vychozi_koren`.
+`rdb.py pribuznost <od> <k>` („prapraděd“, „bratranec z 2. kolena“, „švagr“, „nevlastní strýc“ = jen jeden společný
+předek). Při dvojím příbuzenství vypíše všechny cesty (API pole `cesty`). Výchozí kořen = nastavení `vychozi_koren`.
 
 ## Osoba (`POST /osoby`, `PATCH /osoby/<id>`, `GET /osoby/<id>`)
 | pole | význam |
@@ -48,7 +49,9 @@ jména bez diakritiky.
 
 ## Vztahy (`POST /vztahy`)
 Jen dva typy: `rodic` (`aId` = rodič, `bId` = dítě; zvlášť otec a matka) a `manzele` (`aId`, `bId`). Pole `certainty`,
-`note`, `sources`. Obě osoby musí existovat (nejdřív osoba, pak vztah). Nejvýš jeden otec a jedna matka – alternativy
+`note`, `sources`; u manželů i konec svazku `endReason` (`rozvod` | `rozluka` | `umrti` | `jine`) a `endText` („1935“) –
+`rdb.py vztah uprav <id> --konec rozvod --konec-kdy 1935`. Obě osoby musí existovat (nejdřív osoba, pak vztah).
+V nálezu (`POST nalez`) se už zapsaný vztah nezakládá znovu, jen dostane citaci zápisu (`existingRelations`). Nejvýš jeden otec a jedna matka – alternativy
 jako hypotéza. Sourozenci = společní rodiče; chybějící rodiče založ (`unk`, případně zástupná osoba).
 **Kmotr, svědek, porodní bába, farář nejsou vztahy** – jsou to osoby v rolích zápisu (níže).
 
@@ -109,7 +112,7 @@ bod…), `parentSlug`, `lat`, `lon`, `osm`, `query` (dotaz pro OpenStreetMap), `
 v textech – kmen slova kvůli skloňování: „Holic“ najde Holice i v Holicích; pozor na kolize, `(?<!Nový )Hradec`),
 `hypothesis` (místo jen tušené), `description`, `parish` (farnost), `estate` (panství), `district` (okres),
 `modernName` (dnešní obec / část obce). Úprava jen některých polí: `PATCH /mista/<slug>`. **Staré, německé, latinské názvy** a tvary ze zápisů:
-`rdb.py misto nazev <slug> "Ober-Lhota" --jazyk de --pozn "matrika 1790"`; hledání `rdb.py misto hledej <tvar>` je
+`rdb.py misto nazev <slug> "Ober-Lhota" --jazyk de --pozn "matrika 1790"` (omyl: `… --smaz`); hledání `rdb.py misto hledej <tvar>` je
 najde. Souřadnice dohledá `tools/mista.py` (OSM); u víceznačných názvů (Podolí, Dub, Lhota) zadej dotaz se sousední
 obcí (`mista.py pridej "Podolí" "Podol" "Podolí, Odlochovice"`) a ve výpisu zkontroluj okres. Místopis nejlíp zná
 rodina – když si nejsi jistý, zeptej se. Události obce: `rdb.py misto udalost`.
@@ -127,7 +130,7 @@ Je to **fronta nezpracovaných stop**, ne fakt. Stav (`rdb.py voditko stav`): `n
 posílají vodítka i z webu. **1 tvrzení = 1 vodítko s osobami** (podle osob se řadí k rodu).
 
 **Deník** (`rdb.py denik pridej|hledej|posledni`): každé hledání **i neúspěšné** – `title` (svazek a co), `textMd`,
-`volumeKey`, `pages` (rozsah snímků/stran/let), `result` `nalezeno` | `nenalezeno` | `castecne` | `jine`,
+`volumeKey`, `pages` (rozsah snímků/stran/let), `result` `nalezeno` | `nenalezeno` | `castecne` | `nedostupne` (portál/kniha nejde otevřít – zkusit později) | `jine`,
 `personIds`, `recordKeys`, `tipIds`. Id přiděluje DB (žádná čísla řádků). Před každým hledáním `denik hledej`.
 
 **Úkoly** (`rdb.py ukol …`) = stav projektu a rozpracované věci (dřív `STAV.md`, `archivni_dotazy.md`, fronta úkolů):
@@ -156,8 +159,8 @@ a jejich potomků (ti jsou společní); přiženění k bočním liniím do vět
   - **Pojmenování / popis / barva**: `rdb.py rod pridej <slug> --nazev "Novákové" --zakladatel <kdokoli z linie>
     --popis … --barva …`. Dopočítaný rod se tím uloží (slug můžeš zvolit hezčí, např. `janatovi`; starý `rod-…` zmizí).
     Zakladatel může stát kdekoli na linii; dva uložené rody na jedné linii ohlásí `rdb.py kontrola` jako chybu.
-- **Příběhy** (`rdb.py pribeh uloz <slug> <soubor.md> --titulek … --perex … --druh pribeh|pribeh_rodu|pribeh_domu|zajimavosti|jine
-  --rod <slug> --dum <klíč>`; v API navíc `yearFrom`/`yearTo` = období a `coverSha` = titulní obrázek z `/media`): markdown s kapitolami `##`, odkazy na osoby `[Jan Novák](/osoba/<id>/)`. Jak psát:
+- **Příběhy** (`rdb.py pribeh uloz <slug> <soubor.md> --titulek … --perex … --druh pribeh|pribeh_domu|zajimavosti|jine
+  --rod <slug> --dum <klíč>`; příběh rodu má druh `pribeh`, jinak chybí v seznamu „Příběhy“; v API navíc `yearFrom`/`yearTo` = období a `coverSha` = titulní obrázek z `/media`): markdown s kapitolami `##`, odkazy na osoby `[Jan Novák](/osoba/<id>/)`. Jak psát:
   `pribehy.md`.
 - **Boční příbuzní** bez vlastních osob: `rdb.py osoba bocni <id> --titulek … --text soubor.md`.
 - **Rodinné dokumenty a fotky**: `rdb.py api POST dokumenty '{"title": …, "personIds": […], "houseKeys": […]}'`,

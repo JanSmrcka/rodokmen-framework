@@ -271,6 +271,9 @@ function buildView(b: Base, actor: Actor): Site {
       child: k && k > 1 ? (byK.get(Math.floor(k / 2)) ?? null) : null,
       spouse: g.spouses(id)[0] ?? null,
       spouses: g.spouses(id),
+      spouseEnds: hide
+        ? {}
+        : Object.fromEntries(g.edges.filter((e) => e.type === "manzele" && e.end && (e.a === id || e.b === id)).map((e) => [e.a === id ? e.b : e.a, e.end!])),
       siblings: g.siblings(id),
       children: g.children(id).filter((c) => !g.nodes.get(c)?.placeholder),
       side: hide ? [] : b.sides.filter((s) => s.personId === id).map((s) => ({ name: s.title, text: s.text, records: [] })),
@@ -399,7 +402,7 @@ function buildView(b: Base, actor: Actor): Site {
   // nastavení a příběhy
   const s = b.settings;
   const rootName = g.nodes.get(root)?.name ?? "";
-  const storySlugs = b.stories.filter((x) => x.kind === "pribeh" && x.slug !== "pribeh").map((x) => ({ slug: x.slug, titulek: x.title }));
+  const storySlugs = b.stories.filter((x) => (x.kind === "pribeh" || x.kind === "pribeh_rodu") && x.slug !== "pribeh").map((x) => ({ slug: x.slug, titulek: x.title }));
   const config: SiteConfig = {
     nazev: (s.nazev as string) ?? "Rodokmen",
     popis: (s.popis as string) ?? "Rodinný rodokmen z českých matrik.",

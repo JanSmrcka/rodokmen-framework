@@ -3,7 +3,7 @@
 import type { z } from "zod";
 import { requireEdit, type Actor } from "./actor";
 import { addLog, updateTip } from "./fronta";
-import { addEvent, addRelation, addResidence, createPerson, linkRecordPerson } from "./osoby";
+import { addCitation, addEvent, addRelation, addResidence, createPerson, findRelation, linkRecordPerson } from "./osoby";
 import { upsertRecord, upsertVolume } from "./prameny";
 import type { Tx } from "./tx";
 import type * as V from "./vstupy";
@@ -30,9 +30,18 @@ export async function saveFinding(tx: Tx, actor: Actor, inp: z.infer<typeof V.Fi
     created.push(id);
   }
   for (const p of persons ?? []) await linkRecordPerson(tx, key, p.personId, p.role, p.nameAsWritten);
-  // bez výslovného zdroje se jako zdroj bere tento zápis
+  // bez výslovného zdroje se jako zdroj bere tento zápis; už zapsaný vztah se nezakládá znovu, jen dostane citaci
   const relations = [];
-  for (const r of inp.relations) relations.push((await addRelation(tx, actor, { ...r, sources: r.sources.length ? r.sources : [src] })).id);
+  const existingRelations = [];
+  for (const r of inp.relations) {
+    const sources = r.sources.length ? r.sources : [src];
+    const id = await findRelation(tx, r.type, r.aId, r.bId);
+    if (id === null) relations.push((await addRelation(tx, actor, { ...r, sources })).id);
+    else {
+      for (const s of sources) await addCitation(tx, actor, { relationId: id, ...s });
+      existingRelations.push(id);
+    }
+  }
   const events = [];
   for (const e of inp.events) events.push((await addEvent(tx, actor, { ...e, sources: e.sources.length ? e.sources : [src] })).id);
   const residences = [];
@@ -57,5 +66,5 @@ export async function saveFinding(tx: Tx, actor: Actor, inp: z.infer<typeof V.Fi
     });
     logId = l.id;
   }
-  return { recordKey: key, people: created, relations, events, residences, logId };
+  return { recordKey: key, people: created, relations, existingRelations, events, residences, logId };
 }

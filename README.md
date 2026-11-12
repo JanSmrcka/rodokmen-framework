@@ -33,7 +33,8 @@ Obsahuje:
 12. [Soukromí a bezpečnost](#soukromí-a-bezpečnost)
 13. [Slušné chování k archivům](#slušné-chování-k-archivům)
 14. [Vývoj a testy](#vývoj-a-testy)
-15. [Řešení potíží](#řešení-potíží)
+15. [Licence](#licence)
+16. [Řešení potíží](#řešení-potíží)
 
 ---
 
@@ -80,7 +81,9 @@ cd aplikace
 npm install
 npm run db:up                      # Postgres v Dockeru na portu 5433 (DB rodokmen + rodokmen_test)
 npm run db:migrate                 # vytvoří tabulky
-npm run token -- claude agent      # API token pro AI → zkopírujte do .env jako RODOKMEN_API_TOKEN
+npm run setup -- --jmeno Petr --prijmeni Novák --pohlavi M --narozeni 1980
+                                   # vy jako první osoba a kořen stromu, účet správce webu a token pro AI
+                                   # → vypíše jméno a heslo do webu a RODOKMEN_API_TOKEN, který dáte do .env
 npm run dev                        # web na http://localhost:3000
 ```
 
@@ -106,26 +109,19 @@ a `TEST_DATABASE_URL` v `.env`.
 
 ## První kroky s vlastní rodinou
 
-Nejjednodušší je otevřít Claude Code v kořeni repa a napsat: **„Chci začít rodokmen.“** Skill `rodokmen-plus`
-se vás zeptá na vás, rodiče a prarodiče a všechno zapíše. Ručně by to vypadalo takto:
+Po `npm run setup` otevřete Claude Code v kořeni repa a napište: **„Chci začít rodokmen.“** Skill `rodokmen-plus`
+se zeptá na rodiče a prarodiče a všechno zapíše. Ručně jde totéž přes `tools/rdb.py`:
 
 ```bash
-# 1) zapsat sebe (žijící osoba, údaj od rodiny)
-python3 -I tools/rdb.py osoba pridej --jmeno Petr --prijmeni Novák --sex M --narozeni 1980 --jistota fam --zije ano
-#    → vypíše id, např. petr-novak-1980
-
-# 2) výchozí kořen stromu (potřebuje token s rolí admin; jednorázově)
-cd aplikace && npm run token -- nastaveni admin && cd ..
-RODOKMEN_API_TOKEN=<admin token> python3 -I tools/rdb.py api PUT nastaveni/vychozi_koren '{"value": "petr-novak-1980"}'
-
-# 3) účet správce webu pro sebe
-cd aplikace && npm run admin -- petr-novak-1980
+python3 -I tools/rdb.py osoba pridej --jmeno Josef --prijmeni Novák --sex M --narozeni 1950 --jistota fam
+python3 -I tools/rdb.py vztah pridej rodic josef-novak-1950 petr-novak-1980 --jistota fam
+python3 -I tools/rdb.py voditko pridej …       # co víte z rodiny (nápověda: -h)
 ```
 
 Pak přihlášení na webu, rodiče a prarodiče (`osoba pridej`, `vztah pridej`) a to, co víte z rodiny, jako
 **vodítka** (`voditko pridej`). Od toho se odrazí hledání v matrikách.
 
-Další nastavení webu (`PUT nastaveni/<klíč>`, admin): `nazev`, `popis`, `zapati`, `kontakt` (`{"jmeno": "…", "email": "…"}`), `uvod`.
+Další nastavení webu (`rdb.py api PUT nastaveni/<klíč> '{"value": …}'`, potřebuje token s rolí admin: `npm run token -- nastaveni admin`): `nazev`, `popis`, `zapati`, `kontakt` (`{"jmeno": "…", "email": "…"}`), `uvod`.
 
 ## Práce s Claude Code
 
@@ -167,10 +163,10 @@ Do `CLAUDE.md` si dopište vlastní pravidla projektu, třeba co nesmí na web.
 4. **První správce a token** (lokálně, proti produkční DB):
    ```bash
    cd aplikace
-   DATABASE_URL='<neon url>' npm run token -- claude agent     # → RODOKMEN_API_TOKEN do .env
+   DATABASE_URL='<neon url>' npm run setup -- --jmeno Petr --prijmeni Novák --pohlavi M
    ```
-   V `.env` nastavte `RODOKMEN_API_URL=https://<projekt>.vercel.app`. Zapište sebe (`rdb.py osoba pridej …`)
-   a pak `DATABASE_URL='<neon url>' npm run admin -- <vaše id>`.
+   Vypíše účet správce a token. V `.env` nastavte `RODOKMEN_API_URL=https://<projekt>.vercel.app` a token.
+   (Máte už data lokálně? Pak místo setup přeneste DB – viz níže – a jen `npm run admin -- <vaše id>` a `npm run token -- claude agent`.)
 5. **Další nasazení.** Podle nastavení Vercelu proběhnou po pushi, nebo ručně `cd aplikace && npx vercel --prod`.
    Migrace DB proběhnou při buildu.
 
@@ -209,6 +205,8 @@ Neon má navíc obnovu k libovolnému času za posledních pár dní. `zalohy/` 
 ├── poznamky_pro_skill.md      sem AI zapisuje nápady na zlepšení skillu
 ├── docker-compose.yml         lokální Postgres
 ├── .env.example               vzor nastavení → zkopírujte do .env
+├── LICENSE                    MIT
+├── .github/workflows/ci.yml   testy na GitHubu
 ├── .claude/
 │   ├── settings.json          hook hlidac.py (slušný přístup k archivům)
 │   ├── launch.json            spuštění aplikace z Claude Code
@@ -218,7 +216,7 @@ Neon má navíc obnovu k libovolnému času za posledních pár dní. `zalohy/` 
 │   ├── src/server/            doménová vrstva a API (api.ts, vstupy.ts, graf.ts, rody.ts, …)
 │   ├── src/app/               stránky webu
 │   ├── drizzle/               SQL migrace
-│   ├── scripts/               migrate, seed, token, admin, zaloha, import
+│   ├── scripts/               setup, migrate, seed, token, admin, zaloha, import
 │   └── tests/                 vitest (potřebují běžící DB)
 └── tools/                     Python nástroje (CLI rdb.py a portály archivů)
 ```
@@ -306,6 +304,12 @@ npm run db:generate  # po změně src/db/schema.ts vytvoří migraci v drizzle/
 npm run db:studio    # prohlížeč tabulek
 python3 -I ../tools/test_rdb.py   # smoke test CLI (běžící `npm run dev` + db:seed)
 ```
+
+Na GitHubu běží totéž automaticky (`.github/workflows/ci.yml`): typy, lint a testy proti Postgresu a kontrola Python nástrojů.
+
+## Licence
+
+[MIT](LICENSE) – použijte, upravte a sdílejte, jak potřebujete.
 
 ## Řešení potíží
 

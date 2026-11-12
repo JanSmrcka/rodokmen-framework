@@ -288,3 +288,81 @@ describe("zápis přes API", () => {
     expect(ok.data[0].username).toBe("eva.novakova");
   });
 });
+
+describe("opravy z poznámek k skillu", () => {
+  it("nález s už zapsaným vztahem neselže, vztah jen dostane citaci", async () => {
+    const r = await call("POST", "nalez", {
+      token: agent,
+      body: {
+        record: { key: "o-lhota-1875-opis", volumeKey: "ukazka_1", imageNo: 9, kind: "O", dateText: "1875", title: "Opis sňatku" },
+        relations: [{ type: "manzele", aId: "anna-dvorakova-1855", bId: "vaclav-novak-1850", certainty: "doc" }],
+      },
+    });
+    expect(r.status, JSON.stringify(r.data)).toBe(201);
+    expect(r.data.relations).toEqual([]);
+    expect(r.data.existingRelations).toHaveLength(1);
+  });
+
+  it("týž obrázek u dvou zápisů zůstane u obou", async () => {
+    const jpg = Buffer.from("ffd8ffc0000b080005000401011100ffd9", "hex");
+    for (const key of ["n-lhota-1880-josef-novak", "o-lhota-1875-opis"]) {
+      expect((await call("PUT", `zaznamy/${key}/vyrez`, { token: agent, raw: jpg })).status).toBe(200);
+    }
+    const a = await call("GET", "zaznamy/n-lhota-1880-josef-novak", { token: agent });
+    const b = await call("GET", "zaznamy/o-lhota-1875-opis", { token: agent });
+    expect(a.data.images).toHaveLength(1);
+    expect(b.data.images).toHaveLength(1);
+    expect(a.data.images[0].sha256).not.toBe(b.data.images[0].sha256);
+  });
+
+  it("úprava domu bez jistoty jistotu nepřepíše", async () => {
+    const r = await call("PUT", "domy/lhota-12", { token: agent, body: { placeSlug: "lhota", cp: "12", description: "Domek u návsi." } });
+    expect(r.status, JSON.stringify(r.data)).toBe(200);
+    expect(r.data.certainty).toBe("doc");
+  });
+
+  it("omylem přidaný název místa jde smazat", async () => {
+    const n = await call("POST", "mista/lhota/nazvy", { token: agent, body: { name: "Omyl", lang: "de" } });
+    expect((await call("DELETE", `mista/lhota/nazvy/${n.data.id}`, { token: agent })).status).toBe(200);
+    const p = await call("GET", "mista/lhota", { token: agent });
+    expect(p.data.names.map((x: { name: string }) => x.name)).not.toContain("Omyl");
+  });
+
+  it("osoba z úmrtního zápisu má jen roli zemřelý", async () => {
+    await call("PUT", "zaznamy/z-lhota-1950-test", { token: agent, body: { volumeKey: "ukazka_1", kind: "Z", dateText: "1950", title: "Úmrtí" } });
+    const r = await call("POST", "osoby", {
+      token: agent,
+      body: {
+        sex: "M", given: "Test", surname: "Zemřelý", certainty: "doc",
+        events: [
+          { type: "narozeni", dateText: "1880", certainty: "doc", sources: [{ recordKey: "z-lhota-1950-test" }] },
+          { type: "umrti", dateText: "1950", certainty: "doc", sources: [{ recordKey: "z-lhota-1950-test" }] },
+        ],
+      },
+    });
+    expect(r.status, JSON.stringify(r.data)).toBe(201);
+    const rec = await call("GET", "zaznamy/z-lhota-1950-test", { token: agent });
+    expect(rec.data.persons.map((p: { role: string }) => p.role)).toEqual(["zemrely"]);
+  });
+
+  it("konec manželství (rozvod) a výsledek deníku „nedostupné“", async () => {
+    const rel = await call("POST", "vztahy", {
+      token: agent,
+      body: { type: "manzele", aId: "karel-novak-1883", bId: "anna-dvorakova-1855", endReason: "rozvod", endText: "1925" },
+    });
+    expect(rel.status, JSON.stringify(rel.data)).toBe(201);
+    expect(rel.data).toMatchObject({ endReason: "rozvod", endText: "1925" });
+    const u = await call("PATCH", `vztahy/${rel.data.id}`, { token: agent, body: { endText: "1926" } });
+    expect(u.data.endText).toBe("1926");
+    await call("DELETE", `vztahy/${rel.data.id}`, { token: agent });
+    const l = await call("POST", "denik", { token: agent, body: { title: "Portál nejde", result: "nedostupne" } });
+    expect(l.status, JSON.stringify(l.data)).toBe(201);
+    expect(l.data.result).toBe("nedostupne");
+  });
+
+  it("příbuznost vrací i všechny cesty", async () => {
+    const r = await call("GET", "graf/pribuznost?od=petr-novak-1980&k=vaclav-novak-1850", { token: agent });
+    expect(r.data.label).toBeTruthy();
+    expect(r.data.cesty).toHaveLength(1); // předek: jediná cesta
+  });
+});

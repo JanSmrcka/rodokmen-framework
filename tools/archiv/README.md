@@ -7,7 +7,6 @@ soubory v `data/` (`osoby.py`, `*.json`, `*.md`) a jsou tu **jen pro jednorázov
 - `kontrola.py`, `kontrola_domy.py` – kontrola starých dat (nová kontrola: `rdb.py kontrola`)
 - `zapis.py` – zápis do `data/*.json` (nově `rdb.py …`)
 - `export_web.py`, `export_web_domy.py` – export pro Astro `web/` (aplikace čte DB přímo)
-- `novy_projekt.py` – založení projektu ze šablony skillu (starý formát; nepoužívat)
 
 ## Import do DB
 

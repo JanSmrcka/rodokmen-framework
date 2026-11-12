@@ -9,10 +9,13 @@ Některé portály od roku 2026 pouštějí ke snímkům jen prohlížeč, kter�
 Nástroje bez prohlížeče pak selžou. Řešení je **číst v Chromu uživatele jako člověk**: jedna stránka, zoom, screenshot,
 pauza. Ochranu nikdy neobcházej. Ban dopadne na IP uživatele a často na všechny jeho agenty najednou.
 
-Patří ke skillu `rodokmen-plus` (zápis nálezu, výřez, rámeček, deník). Portálová specifika MZA: `reference/mza.md`.
+Patří ke skillu `rodokmen-plus` (zápis nálezu, výřez, rámeček, deník). Portálová specifika: MZA `reference/mza.md`,
+DigiArchiv SOA Třeboň `reference/digiarchiv.md`.
 
 ## Kdy přejít do prohlížeče
 - Nástroj hlásí „na stránce chybí seznam snímků“, „ALTCHA“, HTTP 403 na stránku detailu, nebo HTML obsahuje `altcha-widget`.
+- Nástroj dostává HTTP 403 hned od začátku, ale Chrome portál načte (eBadatelna, Třeboň, Porta fontium) = blokovaný je
+  nástroj (User-Agent), ne IP; VPN nepomůže → prohlížeč.
 - Portál nemá API ani nástroj (prohlížeč snímků v JavaScriptu, mapové aplikace).
 - Uživatel je na portálu přihlášený (FamilySearch, DNNT) a ty potřebuješ jeho session.
 
@@ -40,9 +43,13 @@ Předtím zkus, jestli to nejde jinak: jiný nástroj nebo jiný endpoint, kter�
 |---|---|
 | MZA Acta Publica | **1 snímek / 30 s na agenta**, ~1 / 10 s za všechny agenty dohromady; nejvýš 2 agenti současně |
 | FamilySearch | 1 dotaz / 15 s; výsledky se načítají ~5 s |
-| ostatní (ČÚZK, RÚIAN, digi.ceskearchivy.cz v prohlížeči) | 1 požadavek / 2–5 s |
+| digi.ceskearchivy.cz (DigiArchiv) | **1 načtení / 20–30 s** (po ~10 za 5 min „Listujete příliš rychle“), viz `reference/digiarchiv.md` |
+| ndk.cz (DNNT) | jen pár dotazů za sezení, s rozestupy – dávka ~10 dotazů nástrojem skončila banem IP (`ndk.cz/bana`) |
+| Porta fontium | fulltextové hledání: po ~150 snímcích za sezení 403 a blokace 30 min |
+| ostatní (ČÚZK, RÚIAN, ZA Opava) | 1 požadavek / 2–5 s |
 
-- „Snímek“ = každé načtení stránky nebo snímku, i jen kvůli metadatům.
+- „Snímek“ = každé načtení stránky nebo snímku, i jen kvůli metadatům (i nové URL se zoomem).
+- `browser_batch`: nejvýš 2–3 snímky v dávce, mezi nimi `wait`. Celá dávka navigací bez pauz = chybová stránka.
 - Čekej skutečně: `python3 -c "import time; time.sleep(30)"` (v některých prostředích je `sleep` v Bashi blokovaný),
   nebo `computer` s akcí `wait`. Kratší mezery nejsou v pořádku, ani „jen tentokrát“.
 - Odpověď 403, 429, 503, stránka „blocked“ nebo opakovaná ALTCHA = **hned přestaň**, zapiš
@@ -62,7 +69,7 @@ ALTCHA, která neprojde sama (widget se točí, žádá kliknutí), = zastav a �
 ## Čtení snímku
 1. Otevři stránku snímku (u MZA skok URL na číslo snímku, viz `reference/mza.md`). Počkej, až se snímek načte.
 2. **Nejdřív přibliž, pak screenshot.** Celostránkový screenshot na jména nestačí. Prohlížeče snímků jsou většinou
-   OpenSeadragon – zoom jedním příkazem (bez nového požadavku na stránku, dlaždice se dotáhnou samy):
+   OpenSeadragon (DigiArchiv ne – tam zoom přes URL, `reference/digiarchiv.md`) – zoom jedním příkazem (bez nového požadavku na stránku, dlaždice se dotáhnou samy):
    ```js
    const v = (window.g_viewer || window.viewer).viewport;
    v.fitBounds(new OpenSeadragon.Rect(x, y, w, h));   // souřadnice v jednotkách obrázku: šířka = 1
@@ -77,6 +84,7 @@ ALTCHA, která neprojde sama (widget se točí, žádá kliknutí), = zastav a �
 ## Výřez a rámeček ze screenshotu
 Snímek v plném rozlišení z portálu za ověřením nemáš, výřez je ze screenshotu:
 1. Ulož screenshot do `pracovni/<svazek>/sn<číslo>_zoom.png` (případně slep půlky `magick a.png b.png +append`).
+   Screenshot se `save_to_disk` je zmenšený podle `scale` – pro výřez ho dělej **bez `scale`** (plné rozlišení obrazovky).
 2. `python3 -I tools/vyrez.py pracovni/<svazek>/sn<číslo>_zoom.png <klíč> x0,y0,x1,y1` – velkoryse, s hlavičkou sloupců.
 3. `python3 -I tools/ramecek.py <klíč> x0,y0,x1,y1` – **rámeček jen kolem čteného zápisu, ne kolem celého výřezu**.
    Prohlédni si `pracovni/ramecek_<klíč>.jpg`. Rámeček přes celý obrázek je chyba, kterou hlídej i při review.
@@ -85,8 +93,15 @@ Snímek v plném rozlišení z portálu za ověřením nemáš, výřez je ze sc
 
 ## Portály
 - **MZA Brno** – Acta Publica (matriky, indexy), sčítací operáty, indikační skici: `reference/mza.md`.
-- **digi.ceskearchivy.cz** (SOA Třeboň): jde bez prohlížeče (`tools/trebon.py`). V prohlížeči jen ověření nebo knihy,
-  které nástroj nezná. Trvalý odkaz `https://digi.ceskearchivy.cz/<id_knihy>/<snímek>`.
+- **digi.ceskearchivy.cz** (SOA Třeboň): primárně `tools/trebon.py`; když vrací 403 nebo knihu nezná, prohlížeč –
+  `reference/digiarchiv.md` (zoom přes URL, iframy, jmenný rejstřík archivu, přísný limit).
+  Trvalý odkaz `https://digi.ceskearchivy.cz/<id_knihy>/<snímek>`.
+- **ZA Opava** (digi.archives.cz/da/): úvodní „Probíhá ověření přístupu“ projde samo (~10 s). Filtr Matriky + „Datum od“
+  zabere až po novém hledání (Enter v poli dotazu), ne hned kliknutím na lupu. Velikost stránky výsledků (50) jde
+  nastavit `form_input` na select. Snímky přepínej selectem čísla snímku vlevo nahoře (ref se po načtení mění –
+  hledej ho znovu). „Technická poznámka: matrika je dosud uložena na matričním úřadě“ v detailu svazku = není online –
+  čti ji dřív, než otevřeš snímky. Rejstříky ČS církve bývají samostatné knihy po písmenech (I-N/I-O/I-Z).
+  Nástroj a limity: `rodokmen-plus/reference/portaly.md` → ZA Opava.
 - **FamilySearch** (uživatel přihlášen): hledání
   `https://www.familysearch.org/search/record/results?q.surname=X&q.givenName=Y&q.anyPlace=Czech`
   (+ `q.birthLikeDate.from/to`, `q.marriageLikeDate.from/to`). Po otevření **počkej ~5 s** (`computer` → `wait`),

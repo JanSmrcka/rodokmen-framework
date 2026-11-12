@@ -209,7 +209,7 @@ export async function saveMedia(
   if (!buf.length) throw badRequest("Prázdný soubor.");
   if (buf.length > MAX_BYTES) throw badRequest(`Obrázek je větší než ${MAX_BYTES / 1024 / 1024} MB – zmenšete ho (vyrez.py dělá max 1800 px).`);
   const mime = sniffMime(buf);
-  const sha256 = createHash("sha256").update(buf).digest("hex");
+  let sha256 = createHash("sha256").update(buf).digest("hex");
   const variant = link.variant ?? "web";
   if (link.recordKey) {
     const [r] = await tx.select({ k: record.key }).from(record).where(eq(record.key, link.recordKey));
@@ -218,6 +218,12 @@ export async function saveMedia(
   // výřez zápisu má od každé varianty jen jeden obrázek: starý nahradit
   if (link.recordKey) {
     await tx.delete(media).where(and(eq(media.recordKey, link.recordKey), eq(media.variant, variant)));
+  }
+  // týž obrázek u jiného zápisu / dokumentu (dva zápisy na jednom výřezu): vlastní id, ať ho druhý nahrání nepřebere
+  const owner = { recordKey: link.recordKey ?? null, documentId: link.documentId ?? null, mapId: link.mapId ?? null };
+  const [same] = await tx.select({ recordKey: media.recordKey, documentId: media.documentId, mapId: media.mapId, variant: media.variant }).from(media).where(eq(media.sha256, sha256));
+  if (same && (same.recordKey !== owner.recordKey || same.documentId !== owner.documentId || same.mapId !== owner.mapId || same.variant !== variant)) {
+    sha256 = createHash("sha256").update(buf).update(JSON.stringify({ ...owner, variant })).digest("hex");
   }
   const { width, height } = imageSize(buf, mime);
   const row = {

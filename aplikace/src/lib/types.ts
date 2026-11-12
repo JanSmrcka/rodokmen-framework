@@ -49,6 +49,7 @@ export interface Person {
   child: string | null;
   spouse: string | null;
   spouses: string[];
+  spouseEnds?: Record<string, string>; // manžel → „rozvedeni 1935“
   siblings: string[];
   children: string[];
   side: { name: string; text: string; records: string[] }[];

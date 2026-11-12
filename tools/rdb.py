@@ -24,7 +24,8 @@ UDALOSTI = ["narozeni", "krest", "snatek", "umrti", "pohreb", "povolani", "sluzb
 SYMBOL = {"narozeni": "*", "krest": "~", "snatek": "×", "umrti": "†", "pohreb": "▭", "povolani": "povolání", "sluzba": "služba", "jine": "·"}
 STAV_VODITKA = ["nezpracovano", "overuje_se", "potvrzeno", "vyvraceno", "nelze_overit", "rozdeleno"]
 STAV_UKOLU = ["otevreny", "rozpracovany", "ceka", "hotovy", "zruseny"]
-VYSLEDEK = ["nalezeno", "nenalezeno", "castecne", "jine"]
+KONEC = ["umrti", "rozvod", "rozluka", "jine"]
+VYSLEDEK = ["nalezeno", "nenalezeno", "castecne", "jine", "nedostupne"]   # nedostupne = portál/kniha nejde otevřít
 REVIEW = ["rozpracovano", "ke_kontrole", "overeno"]
 DRUH_ZAZNAMU = ["N", "O", "Z", "I", "S", "G", "K", "M", "C", "L", "J"]
 DRUH_PRIBEHU = ["pribeh", "pribeh_rodu", "pribeh_domu", "zajimavosti", "jine"]
@@ -248,11 +249,12 @@ def osoba_smaz():
 # ---------- vztahy, události, bydliště, citace ----------
 
 def vztah_pridej():
-    ok(api.post("vztahy", bez_none({"type": A.typ, "aId": A.a, "bId": A.b, "certainty": A.jistota, "note": A.pozn, "sources": zdroje()})), "vztah")
+    ok(api.post("vztahy", bez_none({"type": A.typ, "aId": A.a, "bId": A.b, "certainty": A.jistota, "note": A.pozn,
+                                    "endReason": A.konec, "endText": A.konec_kdy, "sources": zdroje()})), "vztah")
 
 
 def vztah_uprav():
-    ok(api.patch(f"vztahy/{A.id}", bez_none({"certainty": A.jistota, "note": A.pozn})), "vztah upraven")
+    ok(api.patch(f"vztahy/{A.id}", bez_none({"certainty": A.jistota, "note": A.pozn, "endReason": A.konec, "endText": A.konec_kdy})), "vztah upraven")
 
 
 def vztah_smaz():
@@ -437,6 +439,13 @@ def misto_pridej():
 
 
 def misto_nazev():
+    if A.smaz:
+        nazvy = [n for n in api.get(f"mista/{A.slug}").get("names", []) if n["name"] == A.nazev]
+        if not nazvy:
+            sys.exit(f"Místo {A.slug} nemá název „{A.nazev}“.")
+        for n in nazvy:
+            api.delete(f"mista/{A.slug}/nazvy/{n['id']}")
+        return print(f"smazáno: název „{A.nazev}“ ({len(nazvy)}×)")
     ok(api.post(f"mista/{A.slug}/nazvy", bez_none({"name": A.nazev, "lang": A.jazyk, "note": A.pozn})), "název místa")
 
 
@@ -471,6 +480,10 @@ def dum_seznam():
 def dum_pridej():
     d = json_z(A.soubor)
     ok(api.put(f"domy/{A.klic}", d) if A.klic else api.post("domy", d), "dům")
+
+
+def dum_uprav():
+    ok(api.patch(f"domy/{A.klic}", json_z(A.soubor)), "dům")
 
 
 def prijmeni_hledej():
@@ -717,6 +730,10 @@ def kekule():
 def pribuznost():
     def text(d):
         print(f"{A.k} je pro {A.od}: {d.get('label')}" + (f"  (přes {d['via']}, nahoru {d.get('up')}, dolů {d.get('down')})" if d.get("via") else ""))
+        if len(d.get("cesty") or []) > 1:
+            print("všechny cesty (dvojí příbuzenství):")
+            for c in d["cesty"]:
+                print(f"  {c['label']}  (společný předek {c['via']}, nahoru {c['up']}, dolů {c['down']})")
     out(api.get("graf/pribuznost", od=A.od, k=A.k), text)
 
 
@@ -825,7 +842,9 @@ def main():
     o = oblast("vztah", "vztahy rodič–dítě a manželé")
     x = akce(o, "pridej", vztah_pridej, "rodic A B = A je rodič B; manzele A B"); x.add_argument("typ", choices=["rodic", "manzele"]); x.add_argument("a"); x.add_argument("b")
     x.add_argument("--jistota", choices=JISTOTA, default="unk"); x.add_argument("--pozn"); zdr(x)
-    x = akce(o, "uprav", vztah_uprav, "jistota / poznámka vztahu"); x.add_argument("id", type=int); x.add_argument("--jistota", choices=JISTOTA); x.add_argument("--pozn")
+    x.add_argument("--konec", choices=KONEC, help="konec manželství"); x.add_argument("--konec-kdy", help="kdy skončilo („1935“)")
+    x = akce(o, "uprav", vztah_uprav, "jistota / poznámka / konec manželství (rozvod…)"); x.add_argument("id", type=int); x.add_argument("--jistota", choices=JISTOTA); x.add_argument("--pozn")
+    x.add_argument("--konec", choices=KONEC, help="konec manželství"); x.add_argument("--konec-kdy", help="kdy skončilo („1935“)")
     x = akce(o, "smaz", vztah_smaz, "smazání vztahu"); x.add_argument("id", type=int)
 
     # událost
@@ -884,13 +903,14 @@ def main():
     x = akce(o, "pridej", misto_pridej, "založení / doplnění místa"); x.add_argument("slug"); vstup(x)
     x.add_argument("--nazev"); x.add_argument("--druh", help="obec, osada, mlýn…"); x.add_argument("--nadrazene", metavar="SLUG"); x.add_argument("--lat", type=float); x.add_argument("--lon", type=float)
     x.add_argument("--dotaz", help="dotaz pro geokódování"); x.add_argument("--vzor", help="regulární výraz pro hledání v textech"); x.add_argument("--popis"); x.add_argument("--hypoteza", action="store_true")
-    x = akce(o, "nazev", misto_nazev, "další (starý, německý, latinský) název"); x.add_argument("slug"); x.add_argument("nazev"); x.add_argument("--jazyk", help="de, la, cs-old…"); x.add_argument("--pozn")
+    x = akce(o, "nazev", misto_nazev, "další (starý, německý, latinský) název"); x.add_argument("slug"); x.add_argument("nazev"); x.add_argument("--jazyk", help="de, la, cs-old…"); x.add_argument("--pozn"); x.add_argument("--smaz", action="store_true", help="smazat tento (omylem přidaný) název")
     x = akce(o, "udalost", misto_udalost, "událost obce"); x.add_argument("slug"); x.add_argument("text"); x.add_argument("--rok", type=int); x.add_argument("--jistota", choices=JISTOTA, default="unk"); zdr(x)
 
     o = oblast("dum", "domy (čísla, držitelé, obyvatelé)")
     x = akce(o, "ukaz", dum_ukaz, "detail domu"); x.add_argument("klic")
     akce(o, "seznam", dum_seznam, "všechny domy")
     x = akce(o, "pridej", dum_pridej, "založení / úprava domu (JSON podle HouseIn; uvedené seznamy se nahradí)"); x.add_argument("soubor"); x.add_argument("--klic", help="jinak <místo>-<čp>")
+    x = akce(o, "uprav", dum_uprav, "částečná úprava domu (jen uvedená pole a seznamy)"); x.add_argument("klic"); x.add_argument("soubor")
 
     o = oblast("prijmeni", "varianty příjmení")
     x = akce(o, "hledej", prijmeni_hledej, "varianty"); x.add_argument("text", nargs="?")

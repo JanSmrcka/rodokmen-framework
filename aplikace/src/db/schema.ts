@@ -54,7 +54,8 @@ export const storyKind = pgEnum("story_kind", ["pribeh", "pribeh_rodu", "pribeh_
 export const questionState = pgEnum("question_state", ["otevrene", "hypoteza", "vyreseno"]);
 export const tipKind = pgEnum("tip_kind", ["od_rodiny", "zvest", "oprava", "napad"]);
 export const tipStatus = pgEnum("tip_status", ["nezpracovano", "overuje_se", "potvrzeno", "vyvraceno", "nelze_overit", "rozdeleno"]);
-export const researchResult = pgEnum("research_result", ["nalezeno", "nenalezeno", "castecne", "jine"]);
+export const researchResult = pgEnum("research_result", ["nalezeno", "nenalezeno", "castecne", "jine", "nedostupne"]);
+export const relationEnd = pgEnum("relation_end", ["umrti", "rozvod", "rozluka", "jine"]);
 export const taskStatus = pgEnum("task_status", ["otevreny", "rozpracovany", "ceka", "hotovy", "zruseny"]);
 export const userRole = pgEnum("user_role", ["admin", "member"]);
 export const tokenRole = pgEnum("token_role", ["admin", "agent"]);
@@ -107,6 +108,9 @@ export const relation = pgTable(
     bId: text("b_id").notNull().references(() => person.id, { onDelete: "cascade" }), // dítě / manžel 2
     certainty: certainty("certainty").notNull().default("unk"),
     note: text("note"),
+    // konec manželství: rozvod, rozluka, úmrtí (u manželů); datum jako text („1935“, „12. 3. 1935“)
+    endReason: relationEnd("end_reason"),
+    endText: text("end_text"),
     ...stamps(),
   },
   (t) => [

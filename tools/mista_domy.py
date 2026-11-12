@@ -56,6 +56,8 @@ def adresni_mista(dotaz, pole):
     ulice, _, cislo = d.rpartition(" ")
     if not adr and ulice and cislo.isdigit():   # „Ulice čo“ – v RÚIAN je „Ulice čp/čo, Část obce, …“
         adr = ruian_q(1, f"adresa LIKE '{ulice} %/{cislo},%'", pole, True)
+    if not adr and ulice and cislo.isdigit():   # ves bez ulic: „č.p. 12, 12345 Lhota“ (i s částí obce)
+        adr = ruian_q(1, f"adresa LIKE 'č.p. {cislo}, %{ulice}' OR adresa LIKE 'č.p. {cislo}, {ulice},%'", pole, True)
     return adr
 
 
@@ -75,6 +77,8 @@ def ruian(dotaz):
             pa = par[0]["attributes"]
             cislo = f"{pa['kmenovecislo']}" + (f"/{pa['poddelenicisla']}" if pa.get("poddelenicisla") else "")
             ku = ruian_q(7, f"kod={pa['katastralniuzemi']}", "nazev")
+            # druhcislovanikod = způsob číslování v k. ú.: 1 = dvě číselné řady (parcela pod domem je stavební „st.“),
+            # 2 = jedna řada (bez „st.“, číslo platí samo)
             print(f"   parcela {'st. ' if pa.get('druhcislovanikod') == 1 else ''}{cislo}, "
                   f"k. ú. {ku[0]['attributes']['nazev'] if ku else '?'} ({pa['katastralniuzemi']})")
 
