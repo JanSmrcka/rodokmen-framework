@@ -4,6 +4,9 @@ Hotová kostra pro vlastní rodokmen z českých matrik a pro historii domů, kd
 [Claude Code](https://claude.com/claude-code) a vy jen schvalujete a doplňujete, co víte z rodiny.
 Repo je **prázdné**: neobsahuje žádná osobní data ani klíče. Stáhnete si ho, spustíte a začnete svou rodinou.
 
+Vychází z projektu [rodokmen-plus](https://github.com/zbysekvoda/rodokmen-plus) (Zbyšek Voda), který rozšiřuje
+o aplikaci s databází a API.
+
 Obsahuje:
 - **Skilly pro Claude Code** (`.claude/skills/`). Návod, jak hledat v matrikách a archivech, číst kurent a latinu,
   ztotožňovat místa, zapisovat doložené údaje a psát příběhy rodu.
